@@ -109,6 +109,17 @@ DIODESHIELD implements a **5-branch multi-model AI ensemble** with real-time **T
 * Kept the animation limited to the data-diode boundary card; no capture,
   detection, model, or dashboard behavior was changed.
 
+### 2026-09-17 03:41 IST
+
+* Added explicit analyst-controlled `Block IP` and `Unblock` actions to alert
+  rows and connected them to Windows Firewall rule management.
+* Actions validate IPv4/IPv6 input, reject loopback/unspecified/multicast
+  addresses, use deterministic DIODESHIELD rule names, and write audit events.
+* Firewall actions are never automatic. They require
+  `DIODESHIELD_FIREWALL_BLOCKING=true` and an administrator-launched API; the
+  safe default returns a clear permission error instead of changing network
+  state.
+
 ---
 
 ## 2. System Architecture

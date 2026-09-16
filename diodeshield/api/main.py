@@ -1,7 +1,8 @@
 """FastAPI application for passive live packet monitoring.
 
 The dashboard reads from the same Scapy capture worker that feeds the
-detection pipeline. No endpoint creates, injects, or simulates traffic.
+detection pipeline. Capture remains receive-only; optional analyst-approved
+firewall endpoints can enforce a validated IP block on the host.
 """
 from __future__ import annotations
 
@@ -23,6 +24,7 @@ from diodeshield.config import load_config
 from diodeshield.db import Repository
 from diodeshield.integrity import verify_alert
 from diodeshield.pipeline import DetectionPipeline
+from diodeshield.firewall import block_ip, unblock_ip
 from pydantic import BaseModel, Field
 
 from diodeshield.schemas import ConfigUpdate, Feedback, InterfaceSelectRequest, TrafficEvent
@@ -31,6 +33,12 @@ from diodeshield.schemas import ConfigUpdate, Feedback, InterfaceSelectRequest, 
 class AlertFeedbackRequest(BaseModel):
     label: str = Field(pattern="^(TP|FP|BENIGN|UNKNOWN)$")
     comment: str = ""
+
+
+class FirewallIPRequest(BaseModel):
+    ip: str = Field(min_length=3, max_length=39)
+    alert_id: str = ""
+    reason: str = ""
 
 
 class ExplainAlertRequest(BaseModel):
@@ -258,6 +266,26 @@ def alert(alert_id: str) -> dict[str, Any]:
     result = repository.alert(alert_id)
     if result is None:
         raise HTTPException(404, "alert not found")
+    return result
+
+
+@app.post("/api/firewall/block")
+def firewall_block(request: FirewallIPRequest) -> dict[str, Any]:
+    try:
+        result = block_ip(request.ip, request.alert_id, request.reason)
+    except (ValueError, PermissionError, RuntimeError) as exc:
+        raise HTTPException(400, str(exc)) from exc
+    repository.audit("firewall_block", result)
+    return result
+
+
+@app.post("/api/firewall/unblock")
+def firewall_unblock(request: FirewallIPRequest) -> dict[str, Any]:
+    try:
+        result = unblock_ip(request.ip)
+    except (ValueError, PermissionError, RuntimeError) as exc:
+        raise HTTPException(400, str(exc)) from exc
+    repository.audit("firewall_unblock", result)
     return result
 
 
