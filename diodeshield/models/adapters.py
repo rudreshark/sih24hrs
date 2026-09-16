@@ -74,6 +74,7 @@ class XGBoostAdapter(ModelAdapter):
 
     def __init__(self) -> None:
         self.model = None
+        self.feature_names: list[str] | None = None
         self.backend = "deterministic"
         self.training_status = "not_trained"
 
@@ -84,6 +85,8 @@ class XGBoostAdapter(ModelAdapter):
             model = xgb.XGBClassifier()
             model.load_model(str(p))
             self.model = model
+            names = getattr(model, "feature_names_in_", None)
+            self.feature_names = list(names) if names is not None else None
             self.backend = "xgboost"
             self.training_status = "trained"
             n_est = getattr(model, "n_estimators", None) or 30
@@ -100,8 +103,7 @@ class XGBoostAdapter(ModelAdapter):
     def score(self, f: dict[str, Any]) -> float:
         if self.model is not None:
             try:
-                names = getattr(self.model, "feature_names_in_", None)
-                names = list(names) if names is not None else sorted(
+                names = self.feature_names or sorted(
                     key for key, value in f.items() if isinstance(value, (float, int))
                 )
                 vector = np.asarray([[float(f.get(name, 0.0)) for name in names]], dtype=float)
@@ -121,6 +123,7 @@ class LSTMAdapter(ModelAdapter):
 
     def __init__(self) -> None:
         self.model = None
+        self.feature_columns: list[str] | None = None
         self.backend = "deterministic"
         self.training_status = "not_trained"
         self.calibration = None
@@ -151,7 +154,7 @@ class LSTMAdapter(ModelAdapter):
                 net.load_state_dict(torch.load(str(pt_path), map_location="cpu", weights_only=True))
                 net.eval()
                 self.model = net
-                self.feature_columns = feature_columns
+                self.feature_columns = list(feature_columns) if feature_columns else None
                 self.backend = "pytorch"
                 self.training_status = "trained"
                 self.version = "lstm-pytorch-1.0.0"
@@ -168,8 +171,8 @@ class LSTMAdapter(ModelAdapter):
         if self.model is not None:
             try:
                 import torch
-                names = getattr(self, "feature_columns", None)
-                if not names:
+                names = self.feature_columns
+                if names is None:
                     names = sorted(key for key, value in f.items() if isinstance(value, (float, int)))
                 vector = np.asarray([[float(f.get(name, 0.0)) for name in names]], dtype=float)
                 t = torch.from_numpy(vector).float()
@@ -256,6 +259,7 @@ class IsolationForestAdapter(ModelAdapter):
 
     def __init__(self) -> None:
         self.model = None
+        self.feature_names: list[str] | None = None
         self.backend = "deterministic"
         self.training_status = "not_trained"
         self.calibration = None
@@ -270,6 +274,8 @@ class IsolationForestAdapter(ModelAdapter):
             try:
                 import joblib
                 self.model = joblib.load(str(joblib_path))
+                names = getattr(self.model, "feature_names_in_", None)
+                self.feature_names = list(names) if names is not None else None
                 self.backend = "scikit-learn"
                 self.training_status = "trained"
                 self.version = f"isolation-forest-{getattr(self.model, 'n_estimators', '50')}.0.0"
@@ -286,7 +292,7 @@ class IsolationForestAdapter(ModelAdapter):
         if self.model is not None:
             try:
                 import pandas as pd
-                names = getattr(self.model, "feature_names_in_", None)
+                names = self.feature_names
                 if names is not None:
                     df_in = pd.DataFrame([[float(f.get(name, 0.0)) for name in names]], columns=names)
                     df = float(self.model.decision_function(df_in)[0])

@@ -58,8 +58,6 @@ class DetectionPipeline:
             if hasattr(adapter, "update"):
                 adapter.update(features)
         result = fuse(scores, self.config.get("fusion", {}))
-        tree_model = getattr(self.adapters.get("xgboost"), "model", None)
-        explanation = build_explanation(features, scores, tree_model)
         protocol = {}
         for event in events:
             if (event.dst_port == 502 or event.src_port == 502) and event.payload_hex:
@@ -87,6 +85,11 @@ class DetectionPipeline:
             return None
         if risk["risk_level"] == "WARNING" and not risk["persistent"]:
             return None
+        # Explanation generation (especially optional TreeSHAP) is only needed
+        # for persisted alerts. Keeping it off the hot path preserves the
+        # exact scoring and alert policy while improving live throughput.
+        tree_model = getattr(self.adapters.get("xgboost"), "model", None)
+        explanation = build_explanation(features, scores, tree_model)
         ioc_hit = None
         if events:
             for ip in (events[0].src_ip, events[0].dst_ip):
