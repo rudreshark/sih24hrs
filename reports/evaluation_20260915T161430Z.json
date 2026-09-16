@@ -1,0 +1,195 @@
+{
+  "generated_at": "2026-09-15T16:14:30.513826+00:00",
+  "mode": "synthetic",
+  "branch_metrics": {
+    "xgboost": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": 0.5,
+      "pr_auc": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "tn": 4,
+      "fn": 6
+    },
+    "lstm": {
+      "precision": 1.0,
+      "recall": 0.1667,
+      "f1": 0.2857,
+      "roc_auc": 0.5833,
+      "pr_auc": 0.2857,
+      "tp": 1,
+      "fp": 0,
+      "tn": 4,
+      "fn": 5
+    },
+    "fft": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": 0.5,
+      "pr_auc": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "tn": 4,
+      "fn": 6
+    },
+    "kitsune": {
+      "precision": 1.0,
+      "recall": 0.3333,
+      "f1": 0.5,
+      "roc_auc": 0.6667,
+      "pr_auc": 0.5,
+      "tp": 2,
+      "fp": 0,
+      "tn": 4,
+      "fn": 4
+    },
+    "isolation_forest": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "roc_auc": 0.5,
+      "pr_auc": 0.0,
+      "tp": 0,
+      "fp": 0,
+      "tn": 4,
+      "fn": 6
+    },
+    "ensemble": {
+      "precision": 1.0,
+      "recall": 0.3333,
+      "f1": 0.5,
+      "roc_auc": 0.6667,
+      "pr_auc": 0.5,
+      "tp": 2,
+      "fp": 0,
+      "tn": 4,
+      "fn": 4
+    }
+  },
+  "scenarios": [
+    {
+      "scenario": "UDP_FLOOD",
+      "is_attack": true,
+      "detected": true,
+      "risk_score": 1.0,
+      "model_scores": {
+        "xgboost": 0.2399999999825,
+        "lstm": 0.5560382635821561,
+        "fft": 0.41435367598411454,
+        "kitsune": 1.0,
+        "isolation_forest": 0.21999999999800002
+      }
+    },
+    {
+      "scenario": "IP_SPOOF",
+      "is_attack": true,
+      "detected": true,
+      "risk_score": 0.7869882084351927,
+      "model_scores": {
+        "xgboost": 0.10999999998249099,
+        "lstm": 0.3861854835594551,
+        "fft": 0.24862098840033695,
+        "kitsune": 1.0,
+        "isolation_forest": 0.11999999999800001
+      }
+    },
+    {
+      "scenario": "PAYLOAD_ALTERATION",
+      "is_attack": true,
+      "detected": false,
+      "risk_score": 0.0,
+      "model_scores": {}
+    },
+    {
+      "scenario": "C2_BEACON",
+      "is_attack": true,
+      "detected": false,
+      "risk_score": 0.0,
+      "model_scores": {}
+    },
+    {
+      "scenario": "OT_RECON",
+      "is_attack": true,
+      "detected": false,
+      "risk_score": 0.0,
+      "model_scores": {}
+    },
+    {
+      "scenario": "POLICY_VIOLATION",
+      "is_attack": true,
+      "detected": false,
+      "risk_score": 0.0,
+      "model_scores": {}
+    },
+    {
+      "scenario": "NORMAL_MODBUS",
+      "is_attack": false,
+      "detected": false,
+      "risk_score": 0.0,
+      "model_scores": {}
+    },
+    {
+      "scenario": "NORMAL_TELEMETRY",
+      "is_attack": false,
+      "detected": false,
+      "risk_score": 0.0,
+      "model_scores": {}
+    },
+    {
+      "scenario": "NORMAL_OPC_UA",
+      "is_attack": false,
+      "detected": false,
+      "risk_score": 0.0,
+      "model_scores": {}
+    },
+    {
+      "scenario": "NORMAL_NTP_SYNC",
+      "is_attack": false,
+      "detected": false,
+      "risk_score": 0.0,
+      "model_scores": {}
+    }
+  ],
+  "gate": {
+    "xgboost": {
+      "recall_pass": false,
+      "f1_pass": false,
+      "precision_pass": false,
+      "passed": false
+    },
+    "lstm": {
+      "recall_pass": false,
+      "f1_pass": false,
+      "precision_pass": true,
+      "passed": false
+    },
+    "fft": {
+      "recall_pass": false,
+      "f1_pass": false,
+      "precision_pass": false,
+      "passed": false
+    },
+    "kitsune": {
+      "recall_pass": false,
+      "f1_pass": false,
+      "precision_pass": true,
+      "passed": false
+    },
+    "isolation_forest": {
+      "recall_pass": false,
+      "f1_pass": false,
+      "precision_pass": false,
+      "passed": false
+    },
+    "ensemble": {
+      "recall_pass": false,
+      "f1_pass": false,
+      "precision_pass": true,
+      "passed": false
+    },
+    "_overall_pass": false
+  }
+}

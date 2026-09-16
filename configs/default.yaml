@@ -11,18 +11,29 @@ models:
   fft: true
   kitsune: true
   isolation_forest: true
-model_artifacts: {}
+model_artifacts:
+  xgboost: models/xgboost.json
+  lstm: models/lstm.json
+  fft: models/fft.json
+  kitsune: models/kitsune.json
+  isolation_forest: models/isolation_forest.joblib
 fusion:
   xgboost: 0.40
   lstm: 0.20
   fft: 0.15
   kitsune: 0.15
   isolation_forest: 0.10
+consensus:
+  min_agreeing_models: 2
+  vote_threshold: 0.50
+  high_confidence_override: 0.90
 risk:
   critical: 0.85
-  high: 0.70
-  medium: 0.50
-  low: 0.30
+  warning: 0.60
+  high: 0.60
+  info: 0.35
+  medium: 0.35
+  low: 0.20
 persistence:
   enabled: true
   consecutive_windows: 3

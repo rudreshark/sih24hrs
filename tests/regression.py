@@ -4,8 +4,6 @@ import json
 import logging
 import subprocess
 import sys
-import tempfile
-import time
 from pathlib import Path
 from typing import Any
 
@@ -239,7 +237,7 @@ class RegressionTestSuite:
                     saved = json.load(f)
                 return {
                     "passed": True,
-                    "provenance_file": str(ModelHealthChecker.PROVENANCE_FILE),
+                    "provenance_file": "models/provenance.json",
                     "models_tracked": len(saved.get("models", {})),
                 }
 
@@ -280,7 +278,7 @@ def main():
     result = suite.run_all()
 
     print("\n" + "=" * 70)
-    print(f"Regression Test Summary")
+    print("Regression Test Summary")
     print("=" * 70)
     print(f"Total: {result['total']} | Passed: {result['passed']} | Failed: {result['failed']}")
 

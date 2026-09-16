@@ -3,7 +3,13 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .venv/
-data/
-models/*.json
+data/*.db
+data/*.sqlite
+data/*.db-wal
+data/*.db-shm
 *.db
 *.sqlite
+*.db-wal
+*.db-shm
+
+

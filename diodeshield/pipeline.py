@@ -16,6 +16,7 @@ from diodeshield.models.adapters import enabled_adapters
 from diodeshield.protocol.modbus import parse_modbus_tcp
 from diodeshield.risk import RiskEngine
 from diodeshield.schemas import TrafficEvent
+from diodeshield.threat_intel.ioc import LocalIOCStore
 
 
 class DetectionPipeline:
@@ -26,7 +27,8 @@ class DetectionPipeline:
         self.window = SlidingWindow(window["size_seconds"], window["slide_seconds"])
         self.adapters = enabled_adapters(self.config)
         self.risk = RiskEngine(self.config)
-        self.hash_chain = HashChain()
+        self.hash_chain = HashChain(self.repository)
+        self.ioc_store = LocalIOCStore()
         self.baseline: dict[str, float] = {}
         self.latest_health = {"status": "HEALTHY", "visibility": "traffic_observed", "queue_depth": 0}
         self.subscribers: list[Any] = []
@@ -80,6 +82,15 @@ class DetectionPipeline:
             self.latest_health["data_source"] = event.data_source
         if risk["risk_level"] in {"INFO", "LOW", "MEDIUM"} and not risk["persistent"]:
             return None
+        ioc_hit = None
+        if events:
+            for ip in (events[0].src_ip, events[0].dst_ip):
+                if ip:
+                    res = self.ioc_store.lookup(ip)
+                    if res.get("match"):
+                        ioc_hit = {"indicator": ip, **res}
+                        break
+        threat_intel = {"status": "match", **ioc_hit} if ioc_hit else {"status": "clean", "checked": True}
         alert = {
             "alert_id": str(uuid.uuid4()), "timestamp": timestamp, "first_seen": timestamp, "last_seen": timestamp,
             "src_ip": events[0].src_ip if events else None, "dst_ip": events[0].dst_ip if events else None,
@@ -92,7 +103,7 @@ class DetectionPipeline:
             "feature_values": features,
             "top_features": explanation["top_positive"][:10],
             "explanation": explanation,
-            "threat_intel": {"status": "not_configured"}, "vulnerability_context": {"status": "context_only"},
+            "threat_intel": threat_intel, "vulnerability_context": {"status": "context_only"},
             "gateway_context": {"visibility_status": "unavailable"}, "diode_health": self.latest_health,
             "model_version": ",".join(a.version for a in self.adapters.values()),
             "feature_schema_version": "1.0.0", "configuration_version": "default-1",
@@ -121,16 +132,16 @@ def _category(features: dict[str, Any], protocol: dict[str, Any]) -> str:
         return "PACKET_ALTERATION"
     if features.get("udp_burst_score", 0) >= 0.5:
         return "ABNORMAL_TRAFFIC_VOLUME"
+    if features.get("beacon_score", 0) >= 0.4:
+        return "BEACONING"
     if features.get("ttl_anomaly_score", 0) >= 0.5:
         return "TTL_ANOMALY"
     if features.get("payload_integrity_anomaly", 0) > 0:
         return "PACKET_ALTERATION"
-    if features.get("behavior_anomaly_score", 0) >= 0.5:
-        return "ABNORMAL_BEHAVIOR"
     if protocol.get("protocol_anomaly_score", 0) > 0:
         return "PROTOCOL_ANOMALY"
     if features.get("fan_out", 0) > 5:
         return "FAN_OUT_ANOMALY"
-    if features.get("periodicity_score", 0) > 5:
-        return "BEACONING"
+    if features.get("behavior_anomaly_score", 0) >= 0.5:
+        return "ABNORMAL_BEHAVIOR"
     return "NOVEL_BEHAVIOR"

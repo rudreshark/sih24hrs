@@ -65,14 +65,31 @@ class Repository:
         self.path = Path(path or os.getenv("DIODESHIELD_DB", "data/diodeshield.db"))
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.Lock()
-        self._conn = sqlite3.connect(self.path, check_same_thread=False)
+        self._conn = sqlite3.connect(self.path, check_same_thread=False, timeout=30.0)
         self._conn.row_factory = sqlite3.Row
+        self._conn.execute("PRAGMA journal_mode = WAL")
+        self._conn.execute("PRAGMA busy_timeout = 30000")
+        self._conn.execute("PRAGMA synchronous = NORMAL")
         self._conn.executescript(SCHEMA)
         # Keep existing prototype databases usable when a new evidence field is
         # introduced; SQLite's CREATE TABLE IF NOT EXISTS does not migrate it.
         columns = {row[1] for row in self._conn.execute("PRAGMA table_info(alerts)")}
         if "explanation" not in columns:
             self._conn.execute("ALTER TABLE alerts ADD COLUMN explanation TEXT")
+        if "reasons" not in columns:
+            self._conn.execute("ALTER TABLE alerts ADD COLUMN reasons TEXT")
+        if "explanation_llm" not in columns:
+            self._conn.execute("ALTER TABLE alerts ADD COLUMN explanation_llm TEXT")
+        # flows table extra columns (Task 3)
+        flow_cols = {row[1] for row in self._conn.execute("PRAGMA table_info(flows)")}
+        if "src_port" not in flow_cols:
+            self._conn.execute("ALTER TABLE flows ADD COLUMN src_port INTEGER")
+        if "dst_port" not in flow_cols:
+            self._conn.execute("ALTER TABLE flows ADD COLUMN dst_port INTEGER")
+        if "packet_rate" not in flow_cols:
+            self._conn.execute("ALTER TABLE flows ADD COLUMN packet_rate REAL")
+        if "service" not in flow_cols:
+            self._conn.execute("ALTER TABLE flows ADD COLUMN service TEXT")
         self._conn.commit()
 
     def close(self) -> None:
@@ -95,7 +112,7 @@ class Repository:
             "baseline_deviation", "feature_values", "top_features", "threat_intel",
             "vulnerability_context", "gateway_context", "diode_health", "model_version",
             "feature_schema_version", "configuration_version", "sensor_version", "evidence_hash",
-            "previous_hash", "chain_sequence", "incident_id", "explanation",
+            "previous_hash", "chain_sequence", "incident_id", "explanation", "reasons",
         ]
         vals = tuple(json.dumps(alert.get(c), default=str) if isinstance(alert.get(c), (dict, list)) else alert.get(c) for c in columns)
         self._write(
@@ -110,7 +127,7 @@ class Repository:
         for row in rows:
             for key in ("model_scores", "protocol_evidence", "feature_values", "top_features",
                         "threat_intel", "vulnerability_context", "gateway_context", "diode_health",
-                        "explanation"):
+                        "explanation", "reasons", "explanation_llm"):
                 if isinstance(row.get(key), str):
                     try:
                         row[key] = json.loads(row[key])
@@ -118,13 +135,41 @@ class Repository:
                         pass
         return rows
 
+    def save_alert_explanation(self, alert_id: str, explanation: dict[str, Any]) -> None:
+        """Persist LLM-generated explanation for an alert (idempotent upsert)."""
+        self._write(
+            "UPDATE alerts SET explanation_llm = ? WHERE alert_id = ?",
+            (json.dumps(explanation, default=str), alert_id),
+        )
+
+    def get_alert_explanation(self, alert_id: str) -> dict[str, Any] | None:
+        """Return cached LLM explanation for an alert, or None if not yet generated."""
+        rows = self._rows(
+            "SELECT explanation_llm FROM alerts WHERE alert_id = ?", (alert_id,)
+        )
+        if not rows or rows[0].get("explanation_llm") is None:
+            return None
+        raw = rows[0]["explanation_llm"]
+        if isinstance(raw, str):
+            try:
+                return json.loads(raw)
+            except json.JSONDecodeError:
+                return None
+        return raw
+
     def alert(self, alert_id: str) -> dict[str, Any] | None:
         rows = self.alerts(1000)
         return next((r for r in rows if r["alert_id"] == alert_id), None)
 
     def save_flow(self, flow: dict[str, Any]) -> None:
-        self._write("INSERT INTO flows(timestamp,src_ip,dst_ip,protocol,packets,bytes,anomaly_score,asset_id) VALUES(?,?,?,?,?,?,?,?)",
-                    tuple(flow.get(k) for k in ("timestamp", "src_ip", "dst_ip", "protocol", "packets", "bytes", "anomaly_score", "asset_id")))
+        columns = [
+            "timestamp", "src_ip", "dst_ip", "protocol", "packets", "bytes",
+            "anomaly_score", "asset_id", "src_port", "dst_port", "packet_rate", "service",
+        ]
+        self._write(
+            f"INSERT INTO flows({','.join(columns)}) VALUES({','.join('?' for _ in columns)})",
+            tuple(flow.get(k) for k in columns),
+        )
 
     def flows(self, limit: int = 100) -> list[dict[str, Any]]:
         return self._rows("SELECT * FROM flows ORDER BY timestamp DESC LIMIT ?", (max(1, min(limit, 1000)),))
@@ -281,6 +326,21 @@ class Repository:
                 row["scores"] = {}
         return rows
 
+    def verify_integrity(self) -> dict[str, Any]:
+        from diodeshield.integrity import verify_chain
+        rows = self._rows("SELECT * FROM alerts WHERE evidence_hash IS NOT NULL ORDER BY chain_sequence ASC")
+        for row in rows:
+            for key in ("model_scores", "protocol_evidence", "feature_values", "top_features",
+                        "threat_intel", "vulnerability_context", "gateway_context", "diode_health",
+                        "explanation", "reasons"):
+                if isinstance(row.get(key), str):
+                    try:
+                        row[key] = json.loads(row[key])
+                    except json.JSONDecodeError:
+                        pass
+        return verify_chain(rows)
+
     def health(self) -> dict[str, Any]:
         self._conn.execute("SELECT 1").fetchone()
         return {"database": "healthy", "path": str(self.path)}
+

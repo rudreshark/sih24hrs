@@ -1,14 +1,19 @@
 README.md
 pyproject.toml
 diodeshield/__init__.py
+diodeshield/app.py
 diodeshield/cli.py
 diodeshield/config.py
 diodeshield/db.py
+diodeshield/explainability.py
+diodeshield/explainability_llm.py
+diodeshield/firewall.py
 diodeshield/fusion.py
 diodeshield/integrity.py
 diodeshield/pipeline.py
 diodeshield/risk.py
 diodeshield/schemas.py
+diodeshield/startup.py
 diodeshield/synthetic.py
 diodeshield.egg-info/PKG-INFO
 diodeshield.egg-info/SOURCES.txt
@@ -19,6 +24,7 @@ diodeshield/api/__init__.py
 diodeshield/api/main.py
 diodeshield/capture/__init__.py
 diodeshield/capture/dumpcap_manager.py
+diodeshield/capture/live.py
 diodeshield/capture/tshark_manager.py
 diodeshield/features/__init__.py
 diodeshield/features/builder.py
@@ -48,3 +54,5 @@ diodeshield/protocol_security/s7comm.py
 diodeshield/threat_intel/__init__.py
 diodeshield/threat_intel/ioc.py
 tests/test_core.py
+tests/test_new_features.py
+tests/test_training_and_dashboard.py

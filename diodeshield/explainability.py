@@ -87,6 +87,7 @@ def build_explanation(
         name: _fallback_model_explanation(name, features, score)
         for name, score in scores.items()
     }
+    method = "deterministic-fallback"
     if tree_model is not None:
         shap_result = tree_shap_values(tree_model, features)
         if shap_result is not None and "xgboost" in models:
@@ -96,6 +97,7 @@ def build_explanation(
                 "base_value": 0.0,
                 **shap_result,
             }
+            method = "TreeSHAP (xgboost) + deterministic-fallback"
     combined: dict[str, dict[str, Any]] = {}
     for explanation in models.values():
         for item in explanation["features"]:
@@ -110,7 +112,7 @@ def build_explanation(
         item["direction"] = "positive" if item["contribution"] > 0 else "negative"
     return {
         "schema_version": EXPLANATION_SCHEMA_VERSION,
-        "method": "deterministic-fallback",
+        "method": method,
         "models": models,
         "top_positive": [x for x in ranked if x["contribution"] > 0][:10],
         "top_negative": [x for x in ranked if x["contribution"] < 0][:10],

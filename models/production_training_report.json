@@ -1,0 +1,179 @@
+{
+  "status": "production_training",
+  "generated_at": "2026-09-14T04:28:56.708386+00:00",
+  "dataset": {
+    "name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
+    "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
+    "license": "CC0-1.0",
+    "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
+    "rows": 1000,
+    "feature_columns": [
+      "packet_size",
+      "inter_arrival_time",
+      "src_port",
+      "dst_port",
+      "packet_count_5s",
+      "mean_packet_size",
+      "spectral_entropy",
+      "frequency_band_energy",
+      "protocol_type_TCP",
+      "protocol_type_UDP",
+      "src_ip_192.168.1.2",
+      "src_ip_192.168.1.3",
+      "dst_ip_192.168.1.5",
+      "dst_ip_192.168.1.6",
+      "tcp_flags_FIN",
+      "tcp_flags_SYN",
+      "tcp_flags_SYN-ACK"
+    ],
+    "split": "group-aware"
+  },
+  "models": {
+    "xgboost": {
+      "status": "trained",
+      "artifact": "models\\xgboost.json",
+      "model_version": "xgboost-300.0.0",
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 0.478056,
+        "pr_auc": 0.094698,
+        "latency_ms_p50": 8.0878,
+        "latency_ms_p95": 8.589145,
+        "test_samples": 200,
+        "threshold": 0.5
+      },
+      "integrity": {
+        "sha256": "7e5c4c861ad816cf287df3e41a407e5479a11b3bcd19bb0c7fe5e605f41d7b23",
+        "bytes": 1266
+      },
+      "provenance": {
+        "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
+        "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
+        "license": "CC0-1.0",
+        "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
+        "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
+        "split": "group-aware",
+        "training_timestamp": "2026-09-14T04:29:00.899477+00:00"
+      }
+    },
+    "lstm": {
+      "status": "trained",
+      "artifact": "models\\lstm.pt",
+      "model_version": "lstm-pytorch-1.0.0",
+      "metrics": {
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0,
+        "roc_auc": 0.5,
+        "pr_auc": 0.160297,
+        "latency_ms_p50": 0.41965,
+        "latency_ms_p95": 0.66232,
+        "test_samples": 200,
+        "threshold": 0.5
+      },
+      "integrity": {
+        "sha256": "40f9368d16cc916baf3dafaf8d55eb5524d1eeedadac5a108e6e4d28ed657927",
+        "bytes": 1286
+      },
+      "provenance": {
+        "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
+        "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
+        "license": "CC0-1.0",
+        "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
+        "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
+        "split": "group-aware",
+        "training_timestamp": "2026-09-14T04:29:05.346112+00:00"
+      }
+    },
+    "fft": {
+      "status": "trained",
+      "artifact": "models\\fft.json",
+      "model_version": "signal-fft-calibrated-1.0.0",
+      "metrics": {
+        "precision": 0.1,
+        "recall": 1.0,
+        "f1": 0.181818,
+        "roc_auc": 0.439167,
+        "pr_auc": 0.101231,
+        "latency_ms_p50": 0.1467,
+        "latency_ms_p95": 0.185115,
+        "test_samples": 200,
+        "threshold": 0.05
+      },
+      "integrity": {
+        "sha256": "e10e22ed4a291d3f9ff44cde1962ddb352d2e1495ebc7cc656b779953ff948a6",
+        "bytes": 1311
+      },
+      "provenance": {
+        "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
+        "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
+        "license": "CC0-1.0",
+        "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
+        "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
+        "split": "group-aware",
+        "training_timestamp": "2026-09-14T04:29:05.438233+00:00"
+      }
+    },
+    "kitsune": {
+      "status": "trained",
+      "artifact": "models\\kitsune.json",
+      "model_version": "diodeshield-adapted-kitnet-1.0.0",
+      "metrics": {
+        "precision": 0.102041,
+        "recall": 1.0,
+        "f1": 0.185185,
+        "roc_auc": 0.507222,
+        "pr_auc": 0.117267,
+        "latency_ms_p50": 0.0219,
+        "latency_ms_p95": 0.041315,
+        "test_samples": 200,
+        "threshold": 0.1041
+      },
+      "integrity": {
+        "sha256": "d638592a5ef4e4bd7924555d4eb037a7128135390942220815e752a2b9f49e24",
+        "bytes": 2631
+      },
+      "provenance": {
+        "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
+        "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
+        "license": "CC0-1.0",
+        "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
+        "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
+        "split": "group-aware",
+        "training_timestamp": "2026-09-14T04:29:05.489116+00:00"
+      }
+    },
+    "isolation_forest": {
+      "status": "trained",
+      "artifact": "models\\isolation_forest.joblib",
+      "model_version": "isolation-forest-100.0.0",
+      "metrics": {
+        "precision": 0.066667,
+        "recall": 0.1,
+        "f1": 0.08,
+        "roc_auc": 0.489444,
+        "pr_auc": 0.127062,
+        "latency_ms_p50": 11.8727,
+        "latency_ms_p95": 14.85295,
+        "test_samples": 200,
+        "threshold": 0.5
+      },
+      "integrity": {
+        "sha256": "c5f38ab833cb2c3382ff34f112f0c539c1fc858d78613abdeabea0cc306c5b38",
+        "bytes": 1296
+      },
+      "provenance": {
+        "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
+        "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
+        "license": "CC0-1.0",
+        "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
+        "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
+        "split": "group-aware",
+        "training_timestamp": "2026-09-14T04:29:08.493347+00:00"
+      }
+    }
+  },
+  "safety": "metadata-only ingestion; no live traffic, packet crafting, or packet generation"
+}

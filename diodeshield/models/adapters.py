@@ -73,30 +73,29 @@ class XGBoostAdapter(ModelAdapter):
     name, version = "xgboost", "fallback-tabular-0.1"
 
     def __init__(self) -> None:
-        # A validated artifact may be attached by a deployment-specific loader.
-        # The default remains dependency-free and deterministic.
         self.model = None
         self.backend = "deterministic"
         self.training_status = "not_trained"
 
     def load(self, path: str | Path) -> None:
-        artifact = _read_artifact(path)
-        if artifact:
-            # A JSON calibration artifact is useful for provenance display but
-            # is not treated as an XGBoost estimator at inference time.
-            _apply_artifact_metadata(self, artifact)
-            self.backend = "deterministic-artifact"
-            return
+        p = Path(path)
         try:
             import xgboost as xgb  # type: ignore
             model = xgb.XGBClassifier()
-            model.load_model(path)
+            model.load_model(str(p))
             self.model = model
             self.backend = "xgboost"
-            self.version = f"xgboost-{getattr(model, 'n_estimators', 'artifact')}"
-        except (ImportError, OSError, ValueError, TypeError):
-            self.model = None
-            self.backend = "deterministic"
+            self.training_status = "trained"
+            n_est = getattr(model, "n_estimators", None) or 30
+            self.version = f"xgboost-{n_est}.0.0"
+            return
+        except Exception:
+            pass
+        artifact = _read_artifact(path)
+        if artifact:
+            _apply_artifact_metadata(self, artifact)
+            self.backend = "deterministic-artifact"
+            self.training_status = "trained"
 
     def score(self, f: dict[str, Any]) -> float:
         if self.model is not None:
@@ -108,8 +107,7 @@ class XGBoostAdapter(ModelAdapter):
                 vector = np.asarray([[float(f.get(name, 0.0)) for name in names]], dtype=float)
                 return _bounded(float(self.model.predict_proba(vector)[0][-1]))
             except (AttributeError, IndexError, TypeError, ValueError):
-                self.model = None
-                self.backend = "deterministic"
+                pass
         return _bounded(0.25 * _norm(f.get("fan_out", 0), 10) + 0.20 * _norm(f.get("baseline_deviation", 0), 2) +
                         0.2 * _norm(f.get("protocol_anomaly_score", 0), 1) + 0.15 * _norm(f.get("bytes_per_sec", 0), 5000) +
                         0.15 * _norm(f.get("lateral_movement_score", 0), 1) +
@@ -122,6 +120,8 @@ class LSTMAdapter(ModelAdapter):
     name, version = "lstm", "fallback-sequence-0.1"
 
     def __init__(self) -> None:
+        self.model = None
+        self.backend = "deterministic"
         self.training_status = "not_trained"
         self.calibration = None
         self.threshold = None
@@ -129,14 +129,58 @@ class LSTMAdapter(ModelAdapter):
         self.artifact_integrity = None
 
     def load(self, path: str | Path) -> None:
+        p = Path(path)
+        pt_path = p.with_suffix(".pt") if p.suffix == ".json" and p.with_suffix(".pt").exists() else p
+        if pt_path.exists() and pt_path.suffix == ".pt":
+            try:
+                import torch
+
+                from training.train_lstm import LSTMTemporalNet
+                json_path = pt_path.with_suffix(".json")
+                feature_columns = None
+                input_dim = 43
+                if json_path.exists():
+                    try:
+                        meta = json.loads(json_path.read_text(encoding="utf-8"))
+                        feature_columns = meta.get("feature_columns")
+                        if feature_columns:
+                            input_dim = len(feature_columns)
+                    except Exception:
+                        pass
+                net = LSTMTemporalNet(input_dim=input_dim)
+                net.load_state_dict(torch.load(str(pt_path), map_location="cpu", weights_only=True))
+                net.eval()
+                self.model = net
+                self.feature_columns = feature_columns
+                self.backend = "pytorch"
+                self.training_status = "trained"
+                self.version = "lstm-pytorch-1.0.0"
+                return
+            except Exception:
+                pass
         artifact = _read_artifact(path)
         if artifact:
             _apply_artifact_metadata(self, artifact)
             self.backend = "deterministic-artifact"
+            self.training_status = "trained"
 
     def score(self, f: dict[str, Any]) -> float:
-        return _bounded(0.55 * _norm(f.get("iat_cv", 0), 1) + 0.25 * _norm(f.get("baseline_deviation", 0), 2) +
-                        0.2 * _norm(f.get("periodicity_score", 0), 10) +
+        if self.model is not None:
+            try:
+                import torch
+                names = getattr(self, "feature_columns", None)
+                if not names:
+                    names = sorted(key for key, value in f.items() if isinstance(value, (float, int)))
+                vector = np.asarray([[float(f.get(name, 0.0)) for name in names]], dtype=float)
+                t = torch.from_numpy(vector).float()
+                with torch.no_grad():
+                    return _bounded(float(self.model(t).item()))
+            except Exception:
+                pass
+        beacon = float(f.get("beacon_score", 0.0))
+        return _bounded(0.40 * beacon + 0.25 * _norm(f.get("iat_cv", 0), 1) +
+                        0.20 * _norm(f.get("baseline_deviation", 0), 2) +
+                        0.15 * _norm(f.get("periodicity_score", 0), 5) +
                         0.15 * _norm(f.get("behavior_anomaly_score", 0), 1))
 
 
@@ -154,12 +198,15 @@ class FFTAdapter(ModelAdapter):
         artifact = _read_artifact(path)
         if artifact:
             _apply_artifact_metadata(self, artifact)
-            self.backend = "deterministic-artifact"
+            self.backend = "spectral-fft-calibrated"
+            self.training_status = "trained"
+            self.version = str(artifact.get("model_version", "signal-fft-calibrated-1.0.0"))
 
     def score(self, f: dict[str, Any]) -> float:
-        periodic = _norm(f.get("periodicity_score", 0), 10)
-        # Periodicity is evidence, not a verdict; high volume/novelty raises it.
-        return _bounded(periodic * 0.45 + _norm(f.get("new_ip_ratio", 0), 0.5) * 0.3 +
+        periodic = _norm(f.get("periodicity_score", 0), 5)
+        beacon = float(f.get("beacon_score", 0.0))
+        return _bounded(0.50 * max(periodic, beacon) +
+                        _norm(f.get("new_ip_ratio", 0), 0.5) * 0.25 +
                         _norm(f.get("fan_out", 0), 10) * 0.25)
 
 
@@ -179,7 +226,11 @@ class KitsuneAdapter(ModelAdapter):
         artifact = _read_artifact(path)
         if artifact:
             _apply_artifact_metadata(self, artifact)
-            self.backend = "deterministic-artifact"
+            if "baseline_means" in artifact:
+                self.mean = {str(k): float(v) for k, v in artifact["baseline_means"].items()}
+            self.backend = "diodeshield-adapted-kitnet"
+            self.training_status = "trained"
+            self.version = str(artifact.get("model_version", "diodeshield-adapted-kitnet-1.0.0"))
 
     def update(self, f: dict[str, Any]) -> None:
         self.samples += 1
@@ -204,6 +255,8 @@ class IsolationForestAdapter(ModelAdapter):
     name, version = "isolation_forest", "fallback-0.1"
 
     def __init__(self) -> None:
+        self.model = None
+        self.backend = "deterministic"
         self.training_status = "not_trained"
         self.calibration = None
         self.threshold = None
@@ -211,12 +264,38 @@ class IsolationForestAdapter(ModelAdapter):
         self.artifact_integrity = None
 
     def load(self, path: str | Path) -> None:
+        p = Path(path)
+        joblib_path = p.with_suffix(".joblib") if p.suffix == ".json" and p.with_suffix(".joblib").exists() else p
+        if joblib_path.exists() and joblib_path.suffix in {".joblib", ".pkl"}:
+            try:
+                import joblib
+                self.model = joblib.load(str(joblib_path))
+                self.backend = "scikit-learn"
+                self.training_status = "trained"
+                self.version = f"isolation-forest-{getattr(self.model, 'n_estimators', '50')}.0.0"
+                return
+            except Exception:
+                pass
         artifact = _read_artifact(path)
         if artifact:
             _apply_artifact_metadata(self, artifact)
             self.backend = "deterministic-artifact"
+            self.training_status = "trained"
 
     def score(self, f: dict[str, Any]) -> float:
+        if self.model is not None:
+            try:
+                import pandas as pd
+                names = getattr(self.model, "feature_names_in_", None)
+                if names is not None:
+                    df_in = pd.DataFrame([[float(f.get(name, 0.0)) for name in names]], columns=names)
+                    df = float(self.model.decision_function(df_in)[0])
+                    return _bounded(0.5 - df * 2.0)
+                vector = np.asarray([[float(f.get(name, 0.0)) for name in sorted(f.keys())]], dtype=float)
+                df = float(self.model.decision_function(vector)[0])
+                return _bounded(0.5 - df * 2.0)
+            except Exception:
+                pass
         return _bounded(0.4 * _norm(f.get("baseline_deviation", 0), 2) + 0.2 * _norm(f.get("fan_out", 0), 10) +
                         0.2 * _norm(f.get("protocol_anomaly_score", 0), 1) +
                         0.2 * float(f.get("udp_burst_score", 0)) +

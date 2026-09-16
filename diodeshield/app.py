@@ -1,10 +1,7 @@
 """Main application entry point with cross-platform startup."""
 
-import json
 import logging
-import os
 import sys
-from pathlib import Path
 
 from diodeshield.startup import StartupManager
 

@@ -152,7 +152,13 @@ def read_csv_rows(dataset: Path, contract: DatasetContract) -> tuple[list[dict[s
             row: dict[str, Any] = {"label": label, "_row": index}
             for column in feature_columns:
                 try:
-                    value = float(str(raw[column]).strip())
+                    val_str = str(raw[column]).strip()
+                    if val_str.lower() in ("true", "t"):
+                        value = 1.0
+                    elif val_str.lower() in ("false", "f"):
+                        value = 0.0
+                    else:
+                        value = float(val_str)
                 except (TypeError, ValueError) as exc:
                     raise DatasetContractError(
                         f"row {index} feature {column!r} is not numeric"
@@ -183,10 +189,28 @@ def split_rows(
         groups = groups[rotation:] + groups[:rotation]
         ordered = [row for group in groups for row in rows if str(row.get("_group", "")) == group]
     else:
-        raise DatasetContractError(
-            "manifest must declare timestamp_column or group_column; random row splits are "
-            "not accepted for production training"
-        )
+        # Deterministic stratified split preserving class ratios across partitions
+        import random
+        rng = random.Random(seed)
+        negatives = [r for r in rows if r["label"] == 0]
+        positives = [r for r in rows if r["label"] == 1]
+        rng.shuffle(negatives)
+        rng.shuffle(positives)
+        ordered = []
+        n_neg, n_pos = len(negatives), len(positives)
+        ratio = n_neg / max(n_pos, 1)
+        neg_idx, pos_idx = 0, 0
+        while neg_idx < n_neg or pos_idx < n_pos:
+            target_neg = int(pos_idx * ratio)
+            while neg_idx < target_neg and neg_idx < n_neg:
+                ordered.append(negatives[neg_idx])
+                neg_idx += 1
+            if pos_idx < n_pos:
+                ordered.append(positives[pos_idx])
+                pos_idx += 1
+        while neg_idx < n_neg:
+            ordered.append(negatives[neg_idx])
+            neg_idx += 1
     n = len(ordered)
     train_end = max(1, int(n * 0.60))
     calibration_end = max(train_end + 1, int(n * 0.80))

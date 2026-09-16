@@ -140,6 +140,19 @@ def extract_features(events: list[TrafficEvent], baseline: dict[str, float] | No
         event, "virtual_identity", "ip_spoofing", "spoofed", "mac_ip_conflict"))
     values["ip_spoofing_score"] = float(spoofed / len(ordered))
     values["identity_anomaly_score"] = values["ip_spoofing_score"]
+
+    # Beaconing and periodicity features distinguishing standard OT polling from C2 beaconing
+    ot_ports = {502, 102, 20000, 44818, 4840}
+    is_ot_port = any(p in ot_ports for p in ports if isinstance(p, (int, float)))
+    suspicious_c2 = any(p in {4444, 1337, 8443, 9001} or (p not in ot_ports and p > 1024)
+                        for p in ports if isinstance(p, (int, float)))
+    regularity = max(0.0, min(1.0, 1.0 - (values["iat_cv"] / 0.20))) if values["packets"] >= 4 and values["iat_mean"] > 0 else 0.0
+    values["periodicity_score"] = float(max(values.get("periodicity_score", 0.0), regularity * 4.0))
+    if is_ot_port and not suspicious_c2:
+        values["beacon_score"] = 0.0
+    else:
+        values["beacon_score"] = float(min(1.0, 0.6 * regularity + 0.4 * (1.0 if suspicious_c2 else 0.5)))
+
     # A bounded, explainable behavior signal combines independent metadata-only
     # indicators.  It intentionally does not classify an event by itself.
     values["behavior_anomaly_score"] = float(min(
@@ -148,8 +161,35 @@ def extract_features(events: list[TrafficEvent], baseline: dict[str, float] | No
         + 0.35 * _norm_feature(values.get("fan_out", 0), 10.0)
         + 0.15 * _norm_feature(values.get("port_diversity", 0), 10.0)
         + 0.15 * float(values.get("udp_burst_score", 0))
-        + 0.10 * _norm_feature(values.get("periodicity_score", 0), 10.0),
+        + 0.10 * _norm_feature(values.get("periodicity_score", 0), 10.0)
+        + 0.15 * float(values.get("beacon_score", 0)),
     ))
+
+    # Embedded/IoT network dataset feature aliases
+    values["packet_size"] = float(values.get("packet_len_mean", 0.0))
+    values["inter_arrival_time"] = float(values.get("iat_mean", 0.0))
+    values["packet_count_5s"] = float(values.get("packets", 0.0))
+    values["mean_packet_size"] = float(values.get("packet_len_mean", 0.0))
+    values["spectral_entropy"] = float(values.get("spectral_flatness", 0.0))
+    values["frequency_band_energy"] = float(values.get("harmonic_ratio", 0.0))
+    proto = str(values.get("protocol", "")).upper()
+    values["protocol_type_TCP"] = 1.0 if proto == "TCP" else 0.0
+    values["protocol_type_UDP"] = 1.0 if proto == "UDP" else 0.0
+    src_ports = [event.src_port for event in ordered if event.src_port is not None]
+    values["src_port"] = float(src_ports[0]) if src_ports else 0.0
+    values["dst_port"] = float(ports[0]) if ports else 0.0
+    for ip in ("192.168.1.2", "192.168.1.3"):
+        values[f"src_ip_{ip}"] = 1.0 if any(e.src_ip == ip for e in ordered) else 0.0
+    for ip in ("192.168.1.5", "192.168.1.6"):
+        values[f"dst_ip_{ip}"] = 1.0 if any(e.dst_ip == ip for e in ordered) else 0.0
+    flags_seen = set()
+    for e in ordered:
+        if e.tcp_flags:
+            flags_seen.update(str(e.tcp_flags).upper().split(","))
+    values["tcp_flags_FIN"] = 1.0 if "FIN" in flags_seen else 0.0
+    values["tcp_flags_SYN"] = 1.0 if "SYN" in flags_seen and "ACK" not in flags_seen else 0.0
+    values["tcp_flags_SYN-ACK"] = 1.0 if ("SYN" in flags_seen and "ACK" in flags_seen) or "SYN-ACK" in flags_seen else 0.0
+
     return values
 
 

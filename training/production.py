@@ -113,6 +113,7 @@ def _branch_scorer(name: str, rows: list[dict[str, Any]], columns: list[str]) ->
 def _artifact_payload(
     branch: str, contract: DatasetContract, columns: list[str], calibration: dict[str, float],
     threshold: float, metrics: dict[str, Any], normalizer: dict[str, Any] | None = None,
+    extra: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     created = datetime.now(timezone.utc).isoformat()
     payload: dict[str, Any] = {
@@ -136,9 +137,235 @@ def _artifact_payload(
     }
     if normalizer:
         payload["normalizer"] = normalizer
+    if extra:
+        payload.update(extra)
     encoded = json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
     payload["integrity"] = {"sha256": hashlib.sha256(encoded).hexdigest(), "bytes": len(encoded)}
     return payload
+
+
+def _train_xgboost_branch(
+    splits: dict[str, list[dict[str, Any]]],
+    columns: list[str],
+    contract: DatasetContract,
+    output_dir: Path,
+    seed: int = 42,
+) -> dict[str, Any]:
+    try:
+        import pandas as pd
+        import xgboost as xgb
+    except ImportError:
+        return {
+            "status": "not_trained",
+            "reason": "xgboost/pandas not installed in the current environment",
+        }
+
+    X_train = pd.DataFrame([[float(r[c]) for c in columns] for r in splits["train"]], columns=columns)
+    y_train = np.asarray([int(r["label"]) for r in splits["train"]], dtype=int)
+    pos = max(int(np.sum(y_train == 1)), 1)
+    neg = max(int(np.sum(y_train == 0)), 1)
+    scale_pos = neg / pos
+
+    # Exact hyperparameters from Kaggle reference notebook
+    model = xgb.XGBClassifier(
+        n_estimators=300,
+        learning_rate=0.05,
+        max_depth=6,
+        subsample=0.9,
+        colsample_bytree=0.9,
+        scale_pos_weight=scale_pos,
+        random_state=seed,
+        eval_metric="logloss",
+    )
+    model.fit(X_train, y_train)
+
+    model_path = output_dir / "xgboost.json"
+    model.get_booster().save_model(str(model_path))
+
+    X_test = pd.DataFrame([[float(r[c]) for c in columns] for r in splits["test"]], columns=columns)
+    y_test = [int(r["label"]) for r in splits["test"]]
+    timings: list[float] = []
+    test_scores: list[float] = []
+    for i in range(len(X_test)):
+        row_df = X_test.iloc[[i]]
+        t0 = time.perf_counter_ns()
+        p = float(model.predict_proba(row_df)[0][-1])
+        timings.append((time.perf_counter_ns() - t0) / 1_000_000)
+        test_scores.append(p)
+
+    threshold = 0.5
+    metrics = {
+        **_classification(y_test, test_scores, threshold),
+        "roc_auc": _auc(y_test, test_scores),
+        "pr_auc": _pr_auc(y_test, test_scores),
+        "latency_ms_p50": round(float(np.percentile(timings, 50)), 6) if timings else 0.0,
+        "latency_ms_p95": round(float(np.percentile(timings, 95)), 6) if timings else 0.0,
+        "test_samples": len(test_scores),
+        "threshold": threshold,
+    }
+    extra = {
+        "model_version": f"xgboost-{model.n_estimators}.0.0",
+        "backend": "xgboost",
+        "training_status": "trained",
+    }
+    artifact = _artifact_payload("xgboost", contract, columns, {"weight": 1.0, "bias": 0.0}, threshold, metrics, extra=extra)
+    artifact_path = output_dir / "xgboost_artifact.json"
+    artifact_path.write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+    return {
+        "status": "trained",
+        "artifact": str(model_path),
+        "model_version": artifact["model_version"],
+        "metrics": metrics,
+        "integrity": artifact["integrity"],
+        "provenance": artifact["provenance"],
+    }
+
+
+def _train_lstm_branch(
+    splits: dict[str, list[dict[str, Any]]],
+    columns: list[str],
+    contract: DatasetContract,
+    output_dir: Path,
+    epochs: int = 30,
+) -> dict[str, Any]:
+    try:
+        import torch
+        import torch.nn as nn
+
+        from training.train_lstm import LSTMTemporalNet
+    except ImportError:
+        return {
+            "status": "not_trained",
+            "reason": "torch not installed in the current environment",
+        }
+
+    X_train = np.asarray([[float(r[c]) for c in columns] for r in splits["train"]], dtype=np.float32)
+    y_train = np.asarray([float(r["label"]) for r in splits["train"]], dtype=np.float32)
+
+    net = LSTMTemporalNet(input_dim=len(columns))
+    criterion = nn.BCELoss()
+    optimizer = torch.optim.Adam(net.parameters(), lr=0.01)
+
+    x_tensor = torch.from_numpy(X_train).float()
+    y_tensor = torch.from_numpy(y_train).float()
+
+    net.train()
+    for _ in range(epochs):
+        optimizer.zero_grad()
+        preds = net(x_tensor)
+        loss = criterion(preds, y_tensor)
+        loss.backward()
+        optimizer.step()
+
+    net.eval()
+    pt_path = output_dir / "lstm.pt"
+    torch.save(net.state_dict(), pt_path)
+
+    X_test = np.asarray([[float(r[c]) for c in columns] for r in splits["test"]], dtype=np.float32)
+    y_test = [int(r["label"]) for r in splits["test"]]
+    timings: list[float] = []
+    test_scores: list[float] = []
+    with torch.no_grad():
+        for i in range(len(X_test)):
+            t0 = time.perf_counter_ns()
+            t_row = torch.from_numpy(X_test[i:i + 1]).float()
+            p = float(net(t_row).item())
+            timings.append((time.perf_counter_ns() - t0) / 1_000_000)
+            test_scores.append(p)
+
+    threshold = 0.5
+    metrics = {
+        **_classification(y_test, test_scores, threshold),
+        "roc_auc": _auc(y_test, test_scores),
+        "pr_auc": _pr_auc(y_test, test_scores),
+        "latency_ms_p50": round(float(np.percentile(timings, 50)), 6) if timings else 0.0,
+        "latency_ms_p95": round(float(np.percentile(timings, 95)), 6) if timings else 0.0,
+        "test_samples": len(test_scores),
+        "threshold": threshold,
+    }
+    extra = {
+        "model_version": "lstm-pytorch-1.0.0",
+        "backend": "pytorch",
+        "training_status": "trained",
+        "weights_file": "lstm.pt",
+    }
+    artifact = _artifact_payload("lstm", contract, columns, {"weight": 1.0, "bias": 0.0}, threshold, metrics, extra=extra)
+    json_path = output_dir / "lstm.json"
+    json_path.write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+    return {
+        "status": "trained",
+        "artifact": str(pt_path),
+        "model_version": artifact["model_version"],
+        "metrics": metrics,
+        "integrity": artifact["integrity"],
+        "provenance": artifact["provenance"],
+    }
+
+
+def _train_isolation_forest_branch(
+    splits: dict[str, list[dict[str, Any]]],
+    columns: list[str],
+    contract: DatasetContract,
+    output_dir: Path,
+    seed: int = 42,
+) -> dict[str, Any]:
+    try:
+        import joblib
+        import pandas as pd
+        from sklearn.ensemble import IsolationForest
+    except ImportError:
+        return {
+            "status": "not_trained",
+            "reason": "scikit-learn/joblib not installed in the current environment",
+        }
+
+    normal_train = [r for r in splits["train"] if r["label"] == 0]
+    X_train = pd.DataFrame([[float(r[c]) for c in columns] for r in normal_train], columns=columns)
+
+    iso = IsolationForest(n_estimators=100, contamination=0.10, random_state=seed)
+    iso.fit(X_train)
+
+    joblib_path = output_dir / "isolation_forest.joblib"
+    joblib.dump(iso, str(joblib_path))
+
+    X_test = pd.DataFrame([[float(r[c]) for c in columns] for r in splits["test"]], columns=columns)
+    y_test = [int(r["label"]) for r in splits["test"]]
+    timings: list[float] = []
+    test_scores: list[float] = []
+    for i in range(len(X_test)):
+        row_df = X_test.iloc[[i]]
+        t0 = time.perf_counter_ns()
+        df_score = float(iso.decision_function(row_df)[0])
+        score = float(np.clip(0.5 - df_score * 2.0, 0.0, 1.0))
+        timings.append((time.perf_counter_ns() - t0) / 1_000_000)
+        test_scores.append(score)
+
+    threshold = 0.5
+    metrics = {
+        **_classification(y_test, test_scores, threshold),
+        "roc_auc": _auc(y_test, test_scores),
+        "pr_auc": _pr_auc(y_test, test_scores),
+        "latency_ms_p50": round(float(np.percentile(timings, 50)), 6) if timings else 0.0,
+        "latency_ms_p95": round(float(np.percentile(timings, 95)), 6) if timings else 0.0,
+        "test_samples": len(test_scores),
+        "threshold": threshold,
+    }
+    extra = {
+        "model_version": f"isolation-forest-{iso.n_estimators}.0.0",
+        "backend": "scikit-learn",
+        "training_status": "trained",
+    }
+    artifact = _artifact_payload("isolation_forest", contract, columns, {"weight": 1.0, "bias": 0.0}, threshold, metrics, extra=extra)
+    json_path = output_dir / "isolation_forest.json"
+    json_path.write_text(json.dumps(artifact, indent=2), encoding="utf-8")
+    return {
+        "status": "trained",
+        "artifact": str(joblib_path),
+        "model_version": artifact["model_version"],
+        "metrics": metrics,
+        "integrity": artifact["integrity"],
+        "provenance": artifact["provenance"],
+    }
 
 
 def train_production(
@@ -169,15 +396,17 @@ def train_production(
     for branch in branches:
         if branch not in SUPPORTED_BRANCHES:
             raise DatasetContractError(f"unsupported model branch: {branch}")
-        # The optional heavyweight estimators are not silently replaced by a
-        # fallback. They receive an explicit gap in the reproducible report.
-        if branch in {"xgboost", "lstm", "isolation_forest"}:
-            report["models"][branch] = {
-                "status": "not_trained",
-                "reason": f"optional backend for {branch} is not part of the base install; "
-                "install the reviewed [ml] extra and implement the branch-specific estimator",
-            }
+
+        if branch == "xgboost":
+            report["models"][branch] = _train_xgboost_branch(splits, columns, contract, output_dir, seed=seed)
             continue
+        elif branch == "lstm":
+            report["models"][branch] = _train_lstm_branch(splits, columns, contract, output_dir)
+            continue
+        elif branch == "isolation_forest":
+            report["models"][branch] = _train_isolation_forest_branch(splits, columns, contract, output_dir, seed=seed)
+            continue
+
         scorer = _branch_scorer(branch, splits["train"], columns)
         calibration_raw = [scorer(row) for row in splits["calibration"]]
         calibration_labels = [int(row["label"]) for row in splits["calibration"]]
@@ -201,13 +430,35 @@ def train_production(
             "test_samples": len(test_scores),
             "threshold": threshold,
         }
-        artifact = _artifact_payload(branch, contract, columns, calibration, threshold, metrics)
+        extra = {}
+        if branch == "kitsune":
+            normal = [row for row in splits["train"] if row["label"] == 0]
+            extra["baseline_means"] = {col: statistics.fmean(float(row[col]) for row in normal) for col in columns}
+            extra["baseline_stds"] = {col: statistics.pstdev(float(row[col]) for row in normal) + 1e-9 for col in columns}
+            extra["model_version"] = "diodeshield-adapted-kitnet-1.0.0"
+            extra["backend"] = "diodeshield-adapted-kitnet"
+            extra["training_status"] = "trained"
+        elif branch == "fft":
+            extra["model_version"] = "signal-fft-calibrated-1.0.0"
+            extra["backend"] = "spectral-fft-calibrated"
+            extra["training_status"] = "trained"
+
+        artifact = _artifact_payload(branch, contract, columns, calibration, threshold, metrics, extra=extra)
         path = output_dir / f"{branch}.json"
         path.write_text(json.dumps(artifact, indent=2), encoding="utf-8")
         report["models"][branch] = {
             "status": "trained", "artifact": str(path), "model_version": artifact["model_version"],
             "metrics": metrics, "integrity": artifact["integrity"], "provenance": artifact["provenance"],
         }
+
+    # Save and verify provenance if models directory is the main one
+    try:
+        from diodeshield.startup import ModelHealthChecker
+        health = ModelHealthChecker.check_models()
+        ModelHealthChecker.save_provenance(health)
+    except Exception:
+        pass
+
     report_path = output_dir / "production_training_report.json"
     report_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     return report
