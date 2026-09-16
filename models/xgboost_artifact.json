@@ -33,8 +33,8 @@
     "f1": 0.0,
     "roc_auc": 0.478056,
     "pr_auc": 0.094698,
-    "latency_ms_p50": 8.0878,
-    "latency_ms_p95": 8.589145,
+    "latency_ms_p50": 9.165,
+    "latency_ms_p95": 9.685865,
     "test_samples": 200,
     "threshold": 0.5
   },
@@ -45,12 +45,12 @@
     "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
     "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
     "split": "group-aware",
-    "training_timestamp": "2026-09-14T04:29:00.899477+00:00"
+    "training_timestamp": "2026-09-16T12:47:14.963483+00:00"
   },
   "backend": "xgboost",
   "training_status": "trained",
   "integrity": {
-    "sha256": "7e5c4c861ad816cf287df3e41a407e5479a11b3bcd19bb0c7fe5e605f41d7b23",
-    "bytes": 1266
+    "sha256": "ca023083fae13e9fd53822074d5a6e705a460448f1e1bc8e83f868b490594082",
+    "bytes": 1265
   }
 }

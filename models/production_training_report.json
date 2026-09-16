@@ -1,6 +1,6 @@
 {
   "status": "production_training",
-  "generated_at": "2026-09-14T04:28:56.708386+00:00",
+  "generated_at": "2026-09-16T12:47:10.313318+00:00",
   "dataset": {
     "name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
     "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
@@ -39,14 +39,14 @@
         "f1": 0.0,
         "roc_auc": 0.478056,
         "pr_auc": 0.094698,
-        "latency_ms_p50": 8.0878,
-        "latency_ms_p95": 8.589145,
+        "latency_ms_p50": 9.165,
+        "latency_ms_p95": 9.685865,
         "test_samples": 200,
         "threshold": 0.5
       },
       "integrity": {
-        "sha256": "7e5c4c861ad816cf287df3e41a407e5479a11b3bcd19bb0c7fe5e605f41d7b23",
-        "bytes": 1266
+        "sha256": "ca023083fae13e9fd53822074d5a6e705a460448f1e1bc8e83f868b490594082",
+        "bytes": 1265
       },
       "provenance": {
         "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
@@ -55,7 +55,7 @@
         "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
         "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
         "split": "group-aware",
-        "training_timestamp": "2026-09-14T04:29:00.899477+00:00"
+        "training_timestamp": "2026-09-16T12:47:14.963483+00:00"
       }
     },
     "lstm": {
@@ -68,14 +68,14 @@
         "f1": 0.0,
         "roc_auc": 0.5,
         "pr_auc": 0.160297,
-        "latency_ms_p50": 0.41965,
-        "latency_ms_p95": 0.66232,
+        "latency_ms_p50": 0.647,
+        "latency_ms_p95": 1.734455,
         "test_samples": 200,
         "threshold": 0.5
       },
       "integrity": {
-        "sha256": "40f9368d16cc916baf3dafaf8d55eb5524d1eeedadac5a108e6e4d28ed657927",
-        "bytes": 1286
+        "sha256": "e489c42b0fd401eece956096e698336b00aea804fbbcc52f8cba6713de7b2dcc",
+        "bytes": 1285
       },
       "provenance": {
         "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
@@ -84,7 +84,7 @@
         "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
         "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
         "split": "group-aware",
-        "training_timestamp": "2026-09-14T04:29:05.346112+00:00"
+        "training_timestamp": "2026-09-16T12:47:23.771671+00:00"
       }
     },
     "fft": {
@@ -97,14 +97,14 @@
         "f1": 0.181818,
         "roc_auc": 0.439167,
         "pr_auc": 0.101231,
-        "latency_ms_p50": 0.1467,
-        "latency_ms_p95": 0.185115,
+        "latency_ms_p50": 0.19115,
+        "latency_ms_p95": 0.228395,
         "test_samples": 200,
         "threshold": 0.05
       },
       "integrity": {
-        "sha256": "e10e22ed4a291d3f9ff44cde1962ddb352d2e1495ebc7cc656b779953ff948a6",
-        "bytes": 1311
+        "sha256": "bac3dc07e6ac3f4da7687dd98c6b6ff6ea7b3b4cb901982709fc2f78f471f20e",
+        "bytes": 1312
       },
       "provenance": {
         "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
@@ -113,7 +113,7 @@
         "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
         "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
         "split": "group-aware",
-        "training_timestamp": "2026-09-14T04:29:05.438233+00:00"
+        "training_timestamp": "2026-09-16T12:47:23.865274+00:00"
       }
     },
     "kitsune": {
@@ -126,14 +126,14 @@
         "f1": 0.185185,
         "roc_auc": 0.507222,
         "pr_auc": 0.117267,
-        "latency_ms_p50": 0.0219,
-        "latency_ms_p95": 0.041315,
+        "latency_ms_p50": 0.0179,
+        "latency_ms_p95": 0.01891,
         "test_samples": 200,
         "threshold": 0.1041
       },
       "integrity": {
-        "sha256": "d638592a5ef4e4bd7924555d4eb037a7128135390942220815e752a2b9f49e24",
-        "bytes": 2631
+        "sha256": "5f2b0f04914a9ac8788560e0f8c3309d985934836613fa1d1d0700bb9c6531ea",
+        "bytes": 2630
       },
       "provenance": {
         "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
@@ -142,7 +142,7 @@
         "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
         "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
         "split": "group-aware",
-        "training_timestamp": "2026-09-14T04:29:05.489116+00:00"
+        "training_timestamp": "2026-09-16T12:47:23.931417+00:00"
       }
     },
     "isolation_forest": {
@@ -155,14 +155,14 @@
         "f1": 0.08,
         "roc_auc": 0.489444,
         "pr_auc": 0.127062,
-        "latency_ms_p50": 11.8727,
-        "latency_ms_p95": 14.85295,
+        "latency_ms_p50": 25.56845,
+        "latency_ms_p95": 31.539805,
         "test_samples": 200,
         "threshold": 0.5
       },
       "integrity": {
-        "sha256": "c5f38ab833cb2c3382ff34f112f0c539c1fc858d78613abdeabea0cc306c5b38",
-        "bytes": 1296
+        "sha256": "2c4de9ea07edc08f81c344bcf2e6c37d8e535cdd014cb084de373bf9d37b507a",
+        "bytes": 1298
       },
       "provenance": {
         "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
@@ -171,7 +171,7 @@
         "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
         "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
         "split": "group-aware",
-        "training_timestamp": "2026-09-14T04:29:08.493347+00:00"
+        "training_timestamp": "2026-09-16T12:47:29.489715+00:00"
       }
     }
   },
