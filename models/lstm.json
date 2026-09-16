@@ -71,13 +71,13 @@
   },
   "threshold": 0.5,
   "metrics": {
-    "precision": 0.0,
-    "recall": 0.0,
-    "f1": 0.0,
-    "roc_auc": 0.748626,
-    "pr_auc": 0.365462,
-    "latency_ms_p50": 1.18335,
-    "latency_ms_p95": 4.92968,
+    "precision": 0.56,
+    "recall": 0.368421,
+    "f1": 0.444444,
+    "roc_auc": 0.715023,
+    "pr_auc": 0.303586,
+    "latency_ms_p50": 0.6665,
+    "latency_ms_p95": 1.674235,
     "test_samples": 354,
     "threshold": 0.5
   },
@@ -88,13 +88,13 @@
     "citation": "NGCong CI-CIDS2017 test subset; user-provided 4SICS PCAP; repository embedded anomaly dataset",
     "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
     "split": "group-aware",
-    "training_timestamp": "2026-09-16T18:11:47.816067+00:00"
+    "training_timestamp": "2026-09-16T19:49:59.503765+00:00"
   },
   "backend": "pytorch",
   "training_status": "trained",
   "weights_file": "lstm.pt",
   "integrity": {
-    "sha256": "eec7737d098410feaa6c409d2db23188778d174d744adf52d84872fe6b75746b",
-    "bytes": 1942
+    "sha256": "e9253e4ef14c17e0ba0d09c9f5d25921e2dc49023528ea7dbc64b9d7a96700a4",
+    "bytes": 1953
   }
 }

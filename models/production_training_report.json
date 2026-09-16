@@ -1,6 +1,6 @@
 {
   "status": "production_training",
-  "generated_at": "2026-09-16T18:11:26.686019+00:00",
+  "generated_at": "2026-09-16T19:49:02.816980+00:00",
   "dataset": {
     "name": "Embedded anomaly flows plus 4SICS PCAP plus CIC-IDS2017 DDoS subset",
     "source_url": "https://huggingface.co/datasets/NGCong/CI-CIDS2017",
@@ -82,13 +82,13 @@
         "f1": 0.567164,
         "roc_auc": 0.852265,
         "pr_auc": 0.631685,
-        "latency_ms_p50": 15.11745,
-        "latency_ms_p95": 20.13562,
+        "latency_ms_p50": 21.4051,
+        "latency_ms_p95": 38.434785,
         "test_samples": 354,
         "threshold": 0.5
       },
       "integrity": {
-        "sha256": "fbde61e3138a90e886aa9b71cdae76b7d26ae42b890f41d99d29a39d16a0637b",
+        "sha256": "77e84eef567d3b9bd4e5a140c7a2e34f90c83135eed90018ff5b0d8d03286687",
         "bytes": 1929
       },
       "provenance": {
@@ -98,7 +98,7 @@
         "citation": "NGCong CI-CIDS2017 test subset; user-provided 4SICS PCAP; repository embedded anomaly dataset",
         "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
         "split": "group-aware",
-        "training_timestamp": "2026-09-16T18:11:37.399614+00:00"
+        "training_timestamp": "2026-09-16T19:49:22.967774+00:00"
       }
     },
     "lstm": {
@@ -106,19 +106,19 @@
       "artifact": "models\\lstm.pt",
       "model_version": "lstm-pytorch-1.0.0",
       "metrics": {
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "roc_auc": 0.748626,
-        "pr_auc": 0.365462,
-        "latency_ms_p50": 1.18335,
-        "latency_ms_p95": 4.92968,
+        "precision": 0.56,
+        "recall": 0.368421,
+        "f1": 0.444444,
+        "roc_auc": 0.715023,
+        "pr_auc": 0.303586,
+        "latency_ms_p50": 0.6665,
+        "latency_ms_p95": 1.674235,
         "test_samples": 354,
         "threshold": 0.5
       },
       "integrity": {
-        "sha256": "eec7737d098410feaa6c409d2db23188778d174d744adf52d84872fe6b75746b",
-        "bytes": 1942
+        "sha256": "e9253e4ef14c17e0ba0d09c9f5d25921e2dc49023528ea7dbc64b9d7a96700a4",
+        "bytes": 1953
       },
       "provenance": {
         "dataset_name": "Embedded anomaly flows plus 4SICS PCAP plus CIC-IDS2017 DDoS subset",
@@ -127,7 +127,7 @@
         "citation": "NGCong CI-CIDS2017 test subset; user-provided 4SICS PCAP; repository embedded anomaly dataset",
         "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
         "split": "group-aware",
-        "training_timestamp": "2026-09-16T18:11:47.816067+00:00"
+        "training_timestamp": "2026-09-16T19:49:59.503765+00:00"
       }
     },
     "fft": {
@@ -140,13 +140,13 @@
         "f1": 0.340426,
         "roc_auc": 0.57928,
         "pr_auc": 0.184821,
-        "latency_ms_p50": 0.30955,
-        "latency_ms_p95": 1.73875,
+        "latency_ms_p50": 0.2448,
+        "latency_ms_p95": 0.452985,
         "test_samples": 354,
         "threshold": 0.1148
       },
       "integrity": {
-        "sha256": "0e235800be4968440f392b9079da60126f863d9f0208233b65ed4e2ae848689c",
+        "sha256": "673fd7f2de17a46ae0f7088221b78f673116de0683c445a677b4935e682c15b8",
         "bytes": 1976
       },
       "provenance": {
@@ -156,7 +156,7 @@
         "citation": "NGCong CI-CIDS2017 test subset; user-provided 4SICS PCAP; repository embedded anomaly dataset",
         "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
         "split": "group-aware",
-        "training_timestamp": "2026-09-16T18:11:48.303602+00:00"
+        "training_timestamp": "2026-09-16T19:49:59.726141+00:00"
       }
     },
     "kitsune": {
@@ -169,14 +169,14 @@
         "f1": 0.305085,
         "roc_auc": 0.507911,
         "pr_auc": 0.235902,
-        "latency_ms_p50": 0.0945,
-        "latency_ms_p95": 0.22703,
+        "latency_ms_p50": 0.0721,
+        "latency_ms_p95": 0.101365,
         "test_samples": 354,
         "threshold": 0.1201
       },
       "integrity": {
-        "sha256": "8f396e8095b9a92b2e125315447d7ac7dfe4bf3030a85a286e392325a0b53775",
-        "bytes": 6227
+        "sha256": "a8bd92031cea64f3469311996aff5b244a15fbdd1ba5290c0363d6b7cb248d61",
+        "bytes": 6228
       },
       "provenance": {
         "dataset_name": "Embedded anomaly flows plus 4SICS PCAP plus CIC-IDS2017 DDoS subset",
@@ -185,7 +185,7 @@
         "citation": "NGCong CI-CIDS2017 test subset; user-provided 4SICS PCAP; repository embedded anomaly dataset",
         "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
         "split": "group-aware",
-        "training_timestamp": "2026-09-16T18:11:49.031192+00:00"
+        "training_timestamp": "2026-09-16T19:50:00.190522+00:00"
       }
     },
     "isolation_forest": {
@@ -198,14 +198,14 @@
         "f1": 0.289474,
         "roc_auc": 0.5493,
         "pr_auc": 0.242792,
-        "latency_ms_p50": 20.04005,
-        "latency_ms_p95": 47.078405,
+        "latency_ms_p50": 27.056,
+        "latency_ms_p95": 41.729405,
         "test_samples": 354,
         "threshold": 0.5
       },
       "integrity": {
-        "sha256": "e49e9863b78efe7b81945fc956de12868c37ebe0984dfffeb489dbd027afab82",
-        "bytes": 1956
+        "sha256": "bd2717e4c04ae7c9eab104459df165a572896a8e1e6f207c38dfd91e5e114c26",
+        "bytes": 1954
       },
       "provenance": {
         "dataset_name": "Embedded anomaly flows plus 4SICS PCAP plus CIC-IDS2017 DDoS subset",
@@ -214,7 +214,7 @@
         "citation": "NGCong CI-CIDS2017 test subset; user-provided 4SICS PCAP; repository embedded anomaly dataset",
         "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
         "split": "group-aware",
-        "training_timestamp": "2026-09-16T18:12:00.031004+00:00"
+        "training_timestamp": "2026-09-16T19:50:11.288915+00:00"
       }
     }
   },

@@ -243,7 +243,9 @@ class Repository:
             cat = str(row.get("attack_category") or "UNKNOWN")
             src = str(row.get("src_ip") or "UNKNOWN")
             dst = str(row.get("dst_ip") or "UNKNOWN")
-            bucket = str(row.get("timestamp") or "")[:13]
+            # Keep minute buckets so the dashboard can render a live rolling
+            # alert-volume graph instead of a coarse hourly aggregate.
+            bucket = str(row.get("timestamp") or "")[:16]
             severity_counts[level] = severity_counts.get(level, 0) + 1
             category_counts[cat] = category_counts.get(cat, 0) + 1
             sources[src] = sources.get(src, 0) + 1

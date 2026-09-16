@@ -80,7 +80,12 @@ class DetectionPipeline:
                                    "data_source": events[-1].data_source if events else "unknown"})
         for event in events:
             self.latest_health["data_source"] = event.data_source
-        if risk["risk_level"] in {"INFO", "LOW", "MEDIUM"} and not risk["persistent"]:
+        # Do not persist routine or weakly anomalous live windows as alerts.
+        # WARNING requires persistence; CRITICAL is independently gated by
+        # RiskEngine to strong UDP-flood or spoofing evidence.
+        if risk["risk_level"] in {"INFO", "LOW", "MEDIUM"}:
+            return None
+        if risk["risk_level"] == "WARNING" and not risk["persistent"]:
             return None
         ioc_hit = None
         if events:
@@ -126,22 +131,20 @@ def _top_features(features: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def _category(features: dict[str, Any], protocol: dict[str, Any]) -> str:
-    if features.get("ip_spoofing_score", 0) > 0:
+    if features.get("ip_spoofing_score", 0) >= 0.5:
         return "IP_SPOOFING"
-    if features.get("packet_alteration_score", 0) > 0:
+    if features.get("packet_alteration_score", 0) >= 0.5:
         return "PACKET_ALTERATION"
     if features.get("udp_burst_score", 0) >= 0.5:
-        return "ABNORMAL_TRAFFIC_VOLUME"
-    if features.get("beacon_score", 0) >= 0.4:
-        return "BEACONING"
+        return "UDP_FLOOD"
     if features.get("ttl_anomaly_score", 0) >= 0.5:
         return "TTL_ANOMALY"
-    if features.get("payload_integrity_anomaly", 0) > 0:
-        return "PACKET_ALTERATION"
-    if protocol.get("protocol_anomaly_score", 0) > 0:
+    if protocol.get("protocol_anomaly_score", 0) >= 0.5:
         return "PROTOCOL_ANOMALY"
-    if features.get("fan_out", 0) > 5:
+    if features.get("fan_out", 0) >= 10 and features.get("lateral_movement_score", 0) >= 0.5:
         return "FAN_OUT_ANOMALY"
+    if features.get("beacon_score", 0) >= 0.65 and features.get("periodicity_score", 0) >= 2.5:
+        return "C2_BEACON"
     if features.get("behavior_anomaly_score", 0) >= 0.5:
         return "ABNORMAL_BEHAVIOR"
     return "NOVEL_BEHAVIOR"

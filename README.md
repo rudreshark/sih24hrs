@@ -68,6 +68,21 @@ DIODESHIELD implements a **5-branch multi-model AI ensemble** with real-time **T
   accuracy; additional representative labeled traffic is required before
   relying on the ensemble for operational decisions.
 
+### 2026-09-17 01:16 IST
+
+* Added category-aware live severity gating: only a strong UDP flood or
+  repeated source-identity mismatch can produce `CRITICAL`; model disagreement,
+  periodicity, fan-out, and protocol irregularities are capped at `WARNING`.
+* Suppressed non-persistent `INFO`/`LOW` windows from becoming stored alerts,
+  reducing normal-live-traffic noise while retaining persistent warnings.
+* Retrained XGBoost, LSTM, FFT, Kitsune, and Isolation Forest using the
+  verified 1,768-row corpus and preserved the existing 60-feature schema.
+* Latest validation metrics: XGBoost ROC-AUC `0.8523` / F1 `0.5672`;
+  LSTM ROC-AUC `0.7150` / F1 `0.4444`; FFT ROC-AUC `0.5793`;
+  Kitsune ROC-AUC `0.5079`; Isolation Forest ROC-AUC `0.5493`.
+* Training remained metadata-only and defensive; no packet generation,
+  injection, exploit script, or application structure change was introduced.
+
 ---
 
 ## 2. System Architecture

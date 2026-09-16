@@ -29,8 +29,8 @@ consensus:
   high_confidence_override: 0.90
 risk:
   critical: 0.85
-  warning: 0.60
-  high: 0.60
+  warning: 0.65
+  high: 0.65
   info: 0.35
   medium: 0.35
   low: 0.20

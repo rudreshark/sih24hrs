@@ -76,8 +76,8 @@
     "f1": 0.340426,
     "roc_auc": 0.57928,
     "pr_auc": 0.184821,
-    "latency_ms_p50": 0.30955,
-    "latency_ms_p95": 1.73875,
+    "latency_ms_p50": 0.2448,
+    "latency_ms_p95": 0.452985,
     "test_samples": 354,
     "threshold": 0.1148
   },
@@ -88,12 +88,12 @@
     "citation": "NGCong CI-CIDS2017 test subset; user-provided 4SICS PCAP; repository embedded anomaly dataset",
     "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
     "split": "group-aware",
-    "training_timestamp": "2026-09-16T18:11:48.303602+00:00"
+    "training_timestamp": "2026-09-16T19:49:59.726141+00:00"
   },
   "backend": "spectral-fft-calibrated",
   "training_status": "trained",
   "integrity": {
-    "sha256": "0e235800be4968440f392b9079da60126f863d9f0208233b65ed4e2ae848689c",
+    "sha256": "673fd7f2de17a46ae0f7088221b78f673116de0683c445a677b4935e682c15b8",
     "bytes": 1976
   }
 }

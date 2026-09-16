@@ -40,10 +40,24 @@ class ExplainAlertRequest(BaseModel):
     dst_ip: str = Field(min_length=1)
     protocol: str = Field(min_length=1)
     port: int | None = None
+    src_port: int | None = None
+    dst_port: int | None = None
     packet_summary: str = Field(min_length=1)
+    model_scores: dict[str, float] = Field(default_factory=dict)
+    model_votes: dict[str, str] = Field(default_factory=dict)
+    feature_values: dict[str, Any] = Field(default_factory=dict)
+    destination_context: dict[str, Any] = Field(default_factory=dict)
+    historical_context: dict[str, Any] = Field(default_factory=dict)
 
 
 class ExplainAlertResponse(BaseModel):
+    observed: str
+    why_flagged: str
+    context: str
+    confidence: str
+    recommendation: str
+    summary_line: str
+    # Backward-compatible fields used by the current dashboard speech panel.
     summary: str
     severity: str
     spoken_text: str
@@ -281,16 +295,40 @@ def explain_alert_with_ai(request: ExplainAlertRequest) -> ExplainAlertResponse:
         from groq import Groq
 
         client = Groq(api_key=api_key)
+        stored_alert = repository.alert(request.alert_id) or {}
+        supplied = {
+            "alert_id": request.alert_id,
+            "timestamp": stored_alert.get("timestamp"),
+            "severity": stored_alert.get("risk_level"),
+            "category": request.alert_type,
+            "source": {"ip": request.src_ip, "port": request.src_port},
+            "destination": {"ip": request.dst_ip, "port": request.dst_port or request.port},
+            "protocol": request.protocol,
+            "packet_summary": request.packet_summary,
+            "model_scores": request.model_scores or stored_alert.get("model_scores", {}),
+            "model_votes": request.model_votes,
+            "feature_values": request.feature_values or stored_alert.get("feature_values", {}),
+            "destination_context": request.destination_context,
+            "historical_context": request.historical_context,
+            "stored_reasons": stored_alert.get("reasons", []),
+        }
         prompt = (
-            "Analyze this alert using only the supplied live packet metadata. "
-            "Do not invent packets, hosts, or evidence. Return valid JSON only with exactly "
-            "these keys: summary, severity, spoken_text, root_cause, recommended_action. "
-            "severity must be Low, Medium, High, or Critical. "
-            f"Alert ID: {request.alert_id}\n"
-            f"Alert type: {request.alert_type}\n"
-            f"Source: {request.src_ip}\nDestination: {request.dst_ip}\n"
-            f"Protocol: {request.protocol}\nPort: {request.port}\n"
-            f"Packet summary: {request.packet_summary}"
+            "You are a defensive network intrusion detection analyst. Analyze only the "
+            "JSON evidence supplied below. Do not invent values, thresholds, packets, "
+            "reputation, ASN, software, or intent. If a field is absent, explicitly say "
+            "that it is missing or not enriched. Explain model disagreement. Mention exact "
+            "feature values and configured thresholds only when they are present in the "
+            "evidence; otherwise say the threshold is unavailable. Use cautious language "
+            "such as 'consistent with' rather than claiming confirmed malicious activity.\n\n"
+            "Return valid JSON only with exactly these keys:\n"
+            '{"observed":"...", "why_flagged":"...", "context":"...", '
+            '"confidence":"High|Medium|Low", "recommendation":"...", '
+            '"summary_line":"...", "summary":"...", "severity":"Low|Medium|High|Critical", '
+            '"spoken_text":"...", "root_cause":"...", "recommended_action":"..."}\n'
+            "The observed and summary_line values must be concise. The other explanation "
+            "fields should identify evidence, benign alternatives, and a concrete analyst "
+            "next step. The severity is a triage label, not proof of compromise.\n\n"
+            f"Evidence JSON:\n{json.dumps(supplied, default=str, sort_keys=True)}"
         )
         completion = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -306,6 +344,16 @@ def explain_alert_with_ai(request: ExplainAlertRequest) -> ExplainAlertResponse:
         allowed = {"Low", "Medium", "High", "Critical"}
         if data.get("severity") not in allowed:
             raise ValueError("AI returned an invalid severity")
+        required = {
+            "observed", "why_flagged", "context", "confidence",
+            "recommendation", "summary_line", "summary", "spoken_text",
+            "root_cause", "recommended_action",
+        }
+        missing = sorted(key for key in required if not isinstance(data.get(key), str))
+        if data.get("confidence") not in {"High", "Medium", "Low"}:
+            missing.append("confidence")
+        if missing:
+            raise ValueError(f"AI response missing valid fields: {', '.join(missing)}")
         return ExplainAlertResponse.model_validate(data)
     except HTTPException:
         raise

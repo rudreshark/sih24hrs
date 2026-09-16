@@ -62,11 +62,32 @@ class RiskEngine:
         high_models = sum(1 for v in fusion.get("scores", {}).values() if float(v) >= high_override)
         consensus_met = agreeing_models >= min_agreeing
 
-        is_critical = score >= t.get("critical", 0.85) or high_models >= min_agreeing
+        # CRITICAL is reserved for the two directly actionable network
+        # conditions requested by the sensor policy. Model disagreement,
+        # periodicity, fan-out, and protocol irregularity remain WARNING/INFO.
+        udp_flood = (
+            float(features.get("udp_burst_score", 0.0)) >= 0.80
+            and (
+                float(features.get("packets_per_sec", 0.0)) >= 100.0
+                or float(features.get("bytes_per_sec", 0.0)) >= 100_000.0
+            )
+        )
+        ip_spoofing = float(
+            features.get("ip_spoofing_score", features.get("identity_anomaly_score", 0.0))
+        ) >= 0.50
+        is_critical = (udp_flood or ip_spoofing) and score >= t.get("critical", 0.85)
         crit_thresh = t.get("critical", 0.85)
         warn_thresh = t.get("warning", t.get("high", 0.60))
         info_thresh = t.get("info", t.get("medium", 0.35))
-        level = "CRITICAL" if is_critical else "WARNING" if score >= warn_thresh else "INFO" if score >= info_thresh else "LOW"
+        persistent = self.persistence.observe(key, score)
+        if is_critical and not persistent and not ip_spoofing:
+            is_critical = False
+        level = (
+            "CRITICAL" if is_critical
+            else "WARNING" if score >= warn_thresh or ip_spoofing or udp_flood
+            else "INFO" if score >= info_thresh
+            else "LOW"
+        )
         reasons = []
         if features.get("fan_out", 0) > 5:
             reasons.append("unusual destination fan-out")
@@ -106,9 +127,8 @@ class RiskEngine:
             "risk_level": level,
             "confidence": max(0.0, 1.0 - fusion.get("model_disagreement", 0)),
             "reasons": reasons,
-            "persistent": self.persistence.observe(key, score),
+            "persistent": persistent,
             "agreeing_models": agreeing_models,
             "consensus_met": consensus_met,
             "decision_log": decision_log,
         }
-

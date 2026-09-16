@@ -144,14 +144,23 @@ def extract_features(events: list[TrafficEvent], baseline: dict[str, float] | No
     # Beaconing and periodicity features distinguishing standard OT polling from C2 beaconing
     ot_ports = {502, 102, 20000, 44818, 4840}
     is_ot_port = any(p in ot_ports for p in ports if isinstance(p, (int, float)))
-    suspicious_c2 = any(p in {4444, 1337, 8443, 9001} or (p not in ot_ports and p > 1024)
-                        for p in ports if isinstance(p, (int, float)))
+    # High client-side ports are normal for HTTPS, SaaS, and ephemeral TCP
+    # connections.  Do not classify every regular cloud flow as C2 merely
+    # because its destination port is above 1024.
+    suspicious_c2 = any(p in {4444, 1337, 9001} for p in ports if isinstance(p, (int, float)))
     regularity = max(0.0, min(1.0, 1.0 - (values["iat_cv"] / 0.20))) if values["packets"] >= 4 and values["iat_mean"] > 0 else 0.0
     values["periodicity_score"] = float(max(values.get("periodicity_score", 0.0), regularity * 4.0))
-    if is_ot_port and not suspicious_c2:
+    recurring_single_peer = values["fan_out"] <= 1 and values["new_ip_ratio"] <= 0.25
+    unknown_peer_signal = values["fan_out"] > 1 or values["new_ip_ratio"] > 0.50
+    if (is_ot_port or (recurring_single_peer and not suspicious_c2)) and not suspicious_c2:
         values["beacon_score"] = 0.0
     else:
-        values["beacon_score"] = float(min(1.0, 0.6 * regularity + 0.4 * (1.0 if suspicious_c2 else 0.5)))
+        values["beacon_score"] = float(min(
+            1.0,
+            0.55 * regularity
+            + 0.30 * (1.0 if suspicious_c2 else 0.0)
+            + 0.15 * (1.0 if unknown_peer_signal else 0.0),
+        ))
 
     # A bounded, explainable behavior signal combines independent metadata-only
     # indicators.  It intentionally does not classify an event by itself.
