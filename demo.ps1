@@ -33,8 +33,26 @@ Write-Host "  -> Scenario D: Modbus Protocol Anomaly (expect CRITICAL alerts)" -
 Write-Host "`n[3/4] Cryptographic Hash Chain Verification..." -ForegroundColor Yellow
 & $PYTHON -c "from diodeshield.db import Repository; res = Repository().verify_integrity(); print('  Chain Verified:', res.get('valid'), '| Head Seq:', res.get('head_sequence'), '| Total Verified:', res.get('count'))"
 
-# 4. Launch instructions
-Write-Host "`n[4/4] Demonstration Complete!" -ForegroundColor Green
-Write-Host "  To launch the SOC web dashboard, run:" -ForegroundColor White
-Write-Host "    & $PYTHON -m uvicorn diodeshield.api.main:app --host 0.0.0.0 --port 8000" -ForegroundColor Cyan
-Write-Host "  Then open: http://localhost:8000/dashboard/ in your browser.`n" -ForegroundColor White
+# 4. Automatic Launch & Live Remote Attack Trap
+Write-Host "`n[4/4] Launching Live DiodeShield SOC Server & Trap Listeners..." -ForegroundColor Green
+
+# Determine LAN IP for multi-laptop testing
+$LAN_IP = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.InterfaceAlias -notlike "*Loopback*" -and $_.IPAddress -notlike "169.254*" } | Select-Object -First 1).IPAddress
+if (-not $LAN_IP) { $LAN_IP = "127.0.0.1" }
+
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host "  LIVE NETWORK ATTACK INSTRUCTIONS (FOR SECOND LAPTOP)" -ForegroundColor Cyan
+Write-Host "============================================================" -ForegroundColor Cyan
+Write-Host "  Local Dashboard:    http://localhost:8000/dashboard/" -ForegroundColor White
+Write-Host "  Sensor IP (LAN):    $LAN_IP" -ForegroundColor Yellow
+Write-Host "  Attack Trap Ports:  19001 (UDP Flood), 1502/502 (Modbus ICS)" -ForegroundColor Yellow
+Write-Host "`n  Run this command on your OTHER laptop to attack this sensor:" -ForegroundColor Gray
+Write-Host "    python scripts/remote_attack_tool.py --target $LAN_IP --attack udp_flood" -ForegroundColor Cyan
+Write-Host "    python scripts/remote_attack_tool.py --target $LAN_IP --attack modbus_exploit" -ForegroundColor Cyan
+Write-Host "============================================================`n" -ForegroundColor Cyan
+
+# Automatically launch browser
+Start-Process "http://localhost:8000/dashboard/"
+
+# Run server
+& $PYTHON -m uvicorn diodeshield.api.main:app --host 0.0.0.0 --port 8000

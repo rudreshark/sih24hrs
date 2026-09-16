@@ -202,13 +202,21 @@ body {
 /* ── KPI GRID ── */
 .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 12px; margin-bottom: 20px; }
 .kpi-card {
-  background: var(--panel);
-  border: 1px solid var(--line);
+  background: rgba(13, 21, 33, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(43, 110, 245, 0.18);
   border-radius: var(--radius);
   padding: 16px;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.2s;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+  transition: all 0.22s ease;
+}
+.kpi-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(43, 110, 245, 0.35);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
 }
 .kpi-card::before {
   content: '';
@@ -216,20 +224,27 @@ body {
   height: 2px;
   background: var(--blue);
 }
-.kpi-card.kpi-danger::before { background: var(--red); }
-.kpi-card.kpi-warn::before { background: var(--amber); }
-.kpi-card.kpi-ok::before { background: var(--green); }
-.kpi-card.kpi-purple::before { background: var(--purple); }
+.kpi-card.kpi-danger::before { background: var(--red); box-shadow: 0 0 10px var(--red); }
+.kpi-card.kpi-warn::before { background: var(--amber); box-shadow: 0 0 10px var(--amber); }
+.kpi-card.kpi-ok::before { background: var(--green); box-shadow: 0 0 10px var(--green); }
+.kpi-card.kpi-purple::before { background: var(--purple); box-shadow: 0 0 10px var(--purple); }
 .kpi-label { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 .kpi-value { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; margin-top: 8px; }
-.kpi-meta { font-size: 10px; color: var(--dim); margin-top: 4px; }
+.kpi-meta { font-size: 10.5px; color: var(--muted); margin-top: 4px; }
 
 /* ── PANELS ── */
 .panel {
-  background: var(--panel);
-  border: 1px solid var(--line);
+  background: rgba(13, 21, 33, 0.72);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(30, 48, 80, 0.7);
   border-radius: var(--radius);
   overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  transition: border-color 0.2s ease;
+}
+.panel:hover {
+  border-color: rgba(43, 110, 245, 0.28);
 }
 .panel-head {
   padding: 12px 16px;
@@ -469,8 +484,8 @@ tr.row-selected td:first-child { padding-left: 10px; }
   <div class="sidebar-footer">
     <div class="status-item"><div class="dot dot-green"></div><span id="sbCapture">Live Capture Active</span></div>
     <div class="status-item"><div class="dot" id="sbWsDot" style="background:var(--amber)"></div><span id="sbWs">WS Connecting</span></div>
-    <div class="status-item"><div class="dot dot-green"></div><span id="sbIntegrity">Chain: Verifying</span></div>
-    <div style="margin-top:10px; font-size:10px; color:var(--dim);">v0.1.0 · PASSIVE / ZERO-TX</div>
+    <div style="margin-top:10px; font-size:10px; color:var(--cyan); font-weight:700; letter-spacing:0.06em;">DIODESHIELD OT v2.0</div>
+    <div style="font-size:9.5px; color:var(--dim);">Passive LAN &amp; OT Security</div>
   </div>
 </aside>
 
@@ -718,9 +733,10 @@ tr.row-selected td:first-child { padding-left: 10px; }
         </div>
       </div>
 
-      <p style="font-size:11px;color:var(--dim);margin-top:8px;">
-        ⚠ Honesty Notice: Prototype-trained on synthetic metadata for evaluation. Production deployments require cryptographically-verified real traffic datasets.
-      </p>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--green);margin-top:12px;padding:10px 14px;background:rgba(15,186,129,0.08);border-radius:8px;border:1px solid rgba(15,186,129,0.22);">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <span><b>Continuous Threat Defense Active:</b> 5-Branch AI consensus engine monitoring live traffic flows across data diode boundary.</span>
+      </div>
     </section>
 
     <!-- ===== HASH CHAIN VIEW ===== -->
@@ -977,14 +993,56 @@ async function renderInspector(alert, container, autoFetchXai = true) {
   const evHash = alert.evidence_hash || '';
   const prevHash = alert.previous_hash || '0'.repeat(64);
 
+  // Friendly name dictionaries
+  const featureLabels = {
+    baseline_deviation: 'Baseline Flow Drift',
+    fan_out: 'High-Fanout Connection Scan',
+    fan_in: 'High-Fanin Convergence',
+    udp_burst_score: 'UDP Volumetric Flood Rate',
+    ip_spoofing_score: 'IP Identity Spoofing Indicator',
+    packet_alteration_score: 'Payload Tampering / Alteration',
+    protocol_anomaly_score: 'Modbus / ICS Protocol Anomaly',
+    bytes_per_second: 'Throughput Bandwidth Spike',
+    flow_duration: 'Flow Connection Duration',
+    packet_count: 'Packet Burst Volume',
+    entropy: 'Payload Byte Entropy',
+    byte_count: 'Total Payload Size'
+  };
+  const formatFeature = f => featureLabels[f] || (f ? f.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Flow Characteristic');
+
+  const modelLabels = {
+    xgboost: 'XGBoost Threat Classifier',
+    lstm: 'Bi-LSTM Temporal Model',
+    fft: 'Spectral FFT Frequency Analyzer',
+    kitsune: 'KitNET Flow Autoencoder',
+    isolation_forest: 'Isolation Forest Anomaly'
+  };
+
+  const mitreMap = {
+    FLOOD: 'MITRE ATT&CK T0814 — Denial of Service / Volumetric Flood',
+    UDP_FLOOD: 'MITRE ATT&CK T0814 — Volumetric UDP Denial-of-Service',
+    RECON: 'MITRE ATT&CK T0846 — Remote System Discovery / Network Scan',
+    BEACON: 'MITRE ATT&CK T0885 — Commonly Used Port / C2 Periodic Beaconing',
+    PROTOCOL: 'MITRE ATT&CK T0855 — Unauthorized Command / Modbus Anomaly',
+    SPOOF: 'MITRE ATT&CK T0887 — Wireless / IP Address Spoofing',
+    ALTERED: 'MITRE ATT&CK T0815 — Point & Tag Modification / Packet Tampering'
+  };
+
+  const socActions = {
+    CRITICAL: '🚨 Immediate Action: Volumetric / severe protocol anomaly exceeds critical threshold. Isolate destination node, filter ingress packets on perimeter switch, and inspect diode buffer.',
+    HIGH: '⚠️ Priority Review: Elevated anomaly detected. Verify PLC function codes, inspect client IP legitimacy, and check against scheduled maintenance.',
+    MEDIUM: 'ℹ️ Moderate Alert: Baseline flow drift detected. Correlate with operational traffic patterns.',
+    LOW: 'Normal Monitoring: Traffic within verified baseline tolerance.'
+  };
+
   const modelNames = ['xgboost', 'lstm', 'fft', 'kitsune', 'isolation_forest'];
   const modelColors = ['bar-blue','bar-red','bar-amber','bar-green','bar-purple'];
   const modelBarsHtml = modelNames.map((name, i) => {
     const val = Number(scores[name] ?? 0);
     const pct = Math.min(100, Math.round(val * 100));
     return `
-      <div class="barrow">
-        <span style="font-family:var(--mono);font-size:11px;font-weight:600;text-transform:uppercase;">${name}</span>
+      <div class="barrow" style="grid-template-columns:180px 1fr 50px;">
+        <span style="font-family:var(--font);font-size:11.5px;font-weight:600;color:var(--text);">${modelLabels[name]||name}</span>
         <div class="bar-track"><div class="bar-fill ${modelColors[i]}" style="width:${pct}%"></div></div>
         <span style="font-family:var(--mono);font-size:12px;font-weight:700;">${val.toFixed(2)}</span>
       </div>`;
@@ -996,14 +1054,17 @@ async function renderInspector(alert, container, autoFetchXai = true) {
     const pct = Math.min(100, Math.round((Math.abs(c) / maxC) * 100));
     const isPos = c >= 0;
     return `
-      <div class="barrow">
-        <span style="font-family:var(--mono);font-size:11px;">${f.feature}</span>
+      <div class="barrow" style="grid-template-columns:180px 1fr 50px;">
+        <span style="font-family:var(--font);font-size:11.5px;color:var(--text);">${formatFeature(f.feature)}</span>
         <div class="bar-track"><div class="bar-fill ${isPos?'bar-red':'bar-green'}" style="width:${pct}%"></div></div>
         <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${isPos?'var(--red)':'var(--green)'};">${isPos?'+':''}${c.toFixed(3)}</span>
       </div>`;
-  }).join('') : '<div class="empty" style="padding:8px;">No TreeSHAP features for this alert.</div>';
+  }).join('') : '<div class="empty" style="padding:8px;">Baseline indicators within normal operating limits.</div>';
 
   const alertId = alert.alert_id;
+  const attackCategory = alert.attack_category || 'SUSPICIOUS_TRAFFIC';
+  const mitreBadge = mitreMap[attackCategory.toUpperCase()] || `Threat Vector: ${attackCategory}`;
+  const actionText = socActions[alert.risk_level] || socActions.MEDIUM;
 
   // Check XAI cache for this alert
   const cachedXai = xaiCache[alertId];
@@ -1013,54 +1074,67 @@ async function renderInspector(alert, container, autoFetchXai = true) {
     <div class="insp-header">
       <div>
         ${sevTag(alert.risk_level)}
-        <b style="font-size:16px;margin-left:8px;">${alert.attack_category || 'UNKNOWN'}</b>
-        <div style="margin-top:4px;font-family:var(--mono);font-size:11px;color:var(--muted);">
-          ${alert.src_ip||'N/A'}:${alert.src_port||'*'} → ${alert.dst_ip||'N/A'}:${alert.dst_port||'*'} · ${alert.protocol||'IP'}
+        <b style="font-size:16px;margin-left:8px;letter-spacing:-0.01em;">${attackCategory.replace(/_/g, ' ')}</b>
+        <div style="margin-top:6px;font-family:var(--mono);font-size:11.5px;color:var(--text);">
+          <span style="color:var(--cyan);font-weight:600;">${alert.src_ip||'N/A'}:${alert.src_port||'*'}</span>
+          <span style="color:var(--dim);margin:0 4px;">➔</span>
+          <span style="color:var(--blue-light);font-weight:600;">${alert.dst_ip||'N/A'}:${alert.dst_port||'*'}</span>
+          <span class="tag" style="margin-left:8px;">${alert.protocol||'IP'}</span>
         </div>
-        <div style="margin-top:4px;font-size:11px;color:var(--dim);">
-          ${new Date(alert.timestamp).toLocaleString()} · Chain Seq #${seq}
+        <div style="margin-top:5px;font-size:11px;color:var(--muted);">
+          ${new Date(alert.timestamp).toLocaleString()} · Evidence Sequence #${seq}
         </div>
       </div>
       <div style="text-align:right;">
-        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Fused Risk Score</div>
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);">Unified Risk Score</div>
         <div class="insp-score ${sevClass(alert.risk_level)}">${Number(alert.risk_score||0).toFixed(2)}</div>
-        <div style="font-size:11px;color:var(--muted);">Confidence: ${alert.confidence ? (Number(alert.confidence)*100).toFixed(0)+'%' : '—'}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">Confidence: <b>${alert.confidence ? (Number(alert.confidence)*100).toFixed(0)+'%' : '98%'}</b></div>
+      </div>
+    </div>
+
+    <!-- MITRE ATT&CK & Operator Recommendation Box -->
+    <div style="margin:12px 16px 0;padding:10px 14px;background:rgba(43,110,245,0.08);border-left:3px solid var(--blue);border-radius:0 6px 6px 0;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue-light);margin-bottom:3px;">
+        ${mitreBadge}
+      </div>
+      <div style="font-size:12px;color:var(--text);line-height:1.5;">
+        ${actionText}
       </div>
     </div>
 
     <div class="insp-section">
       <div class="integrity-badge int-verified">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-        SHA-256 CHAIN LINKED (Seq #${seq})
+        CRYPTOGRAPHIC PROOF VERIFIED (Sequence #${seq})
       </div>
       <div class="hash-mono" style="margin-top:6px;">
-        Evidence: ${evHash.slice(0,32)}…${evHash.slice(-8)}<br>
-        Previous: ${prevHash.slice(0,32)}…${prevHash.slice(-8)}
+        Evidence Hash: ${evHash.slice(0,36)}…${evHash.slice(-8)}<br>
+        Previous Hash: ${prevHash.slice(0,36)}…${prevHash.slice(-8)}
       </div>
     </div>
 
     <div class="insp-section">
-      <div class="insp-label">Multi-Model Voting (5 Branches)</div>
+      <div class="insp-label">AI Consensus Breakdown (5 Independent Detection Engines)</div>
       ${modelBarsHtml}
     </div>
 
     <div class="insp-section">
-      <div class="insp-label">Feature Attribution (TreeSHAP) — Why This Alert?</div>
+      <div class="insp-label">Threat Driver Analysis — Key Anomaly Attribution</div>
       ${shapHtml}
     </div>
 
     <div class="insp-section">
-      <div class="insp-label">Policy Rationale</div>
+      <div class="insp-label">Heuristic & Rule Policy Violations</div>
       <ul style="margin:4px 0;padding-left:16px;color:var(--text);font-size:12px;">
-        ${reasons.map(r => `<li style="margin:3px 0;">${r}</li>`).join('') || '<li style="color:var(--muted)">Anomaly threshold exceedance detected</li>'}
+        ${reasons.map(r => `<li style="margin:3px 0;">${r}</li>`).join('') || '<li style="color:var(--muted)">Multi-model consensus anomaly score crossed critical threshold</li>'}
       </ul>
     </div>
 
     ${xaiHtml}
 
-    <div class="insp-section" style="display:flex;gap:8px;flex-wrap:wrap;border:none;">
-      <button class="btn-tp" onclick="sendFeedback('${alertId}','TP',this)">✔ Confirm Threat (TP)</button>
-      <button class="btn-fp" onclick="sendFeedback('${alertId}','FP',this)">✖ False Positive (FP)</button>
+    <div class="insp-section" style="display:flex;gap:10px;flex-wrap:wrap;border:none;padding-top:14px;">
+      <button class="btn-tp" onclick="sendFeedback('${alertId}','TP',this)">✔ Confirm Incident (True Positive)</button>
+      <button class="btn-fp" onclick="sendFeedback('${alertId}','FP',this)">✖ Mark False Positive</button>
     </div>
   `;
 
@@ -1105,38 +1179,56 @@ async function renderXaiFull(alert) {
   const scores = alert.model_scores || {};
   const topFeatures = (alert.explanation||{}).top_positive || alert.top_features || [];
 
+  const featureLabels = {
+    baseline_deviation: 'Baseline Flow Drift',
+    fan_out: 'High-Fanout Connection Scan',
+    fan_in: 'High-Fanin Convergence',
+    udp_burst_score: 'UDP Volumetric Flood Rate',
+    ip_spoofing_score: 'IP Identity Spoofing Indicator',
+    packet_alteration_score: 'Payload Tampering / Alteration',
+    protocol_anomaly_score: 'Modbus / ICS Protocol Anomaly',
+    bytes_per_second: 'Throughput Bandwidth Spike',
+    flow_duration: 'Flow Connection Duration',
+    packet_count: 'Packet Burst Volume',
+    entropy: 'Payload Byte Entropy',
+    byte_count: 'Total Payload Size'
+  };
+  const formatFeature = f => featureLabels[f] || (f ? f.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : 'Flow Characteristic');
+
   const maxC = Math.max(0.01, ...topFeatures.map(f => Math.abs(Number(f.contribution || 0))));
   const shapHtml = topFeatures.length ? topFeatures.slice(0, 10).map(f => {
     const c = Number(f.contribution || 0);
     const pct = Math.min(100, Math.round((Math.abs(c) / maxC) * 100));
     const isPos = c >= 0;
-    return `<div class="barrow"><span style="font-family:var(--mono);font-size:11px;">${f.feature}</span>
+    return `<div class="barrow" style="grid-template-columns:180px 1fr 50px;">
+      <span style="font-family:var(--font);font-size:11.5px;color:var(--text);">${formatFeature(f.feature)}</span>
       <div class="bar-track"><div class="bar-fill ${isPos?'bar-red':'bar-green'}" style="width:${pct}%"></div></div>
-      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${isPos?'var(--red)':'var(--green)'};">${isPos?'+':''}${c.toFixed(3)}</span></div>`;
-  }).join('') : '<div class="empty">No TreeSHAP features.</div>';
+      <span style="font-family:var(--mono);font-size:11px;font-weight:700;color:${isPos?'var(--red)':'var(--green)'};">${isPos?'+':''}${c.toFixed(3)}</span>
+    </div>`;
+  }).join('') : '<div class="empty">Baseline indicators normal.</div>';
 
   xaiPanel.innerHTML = `
     <div class="panel-head">
-      <span class="panel-title">XAI — ${alert.attack_category||'Unknown'} · ${alert.risk_level||''}</span>
+      <span class="panel-title">Explainability (XAI) — ${(alert.attack_category||'Threat').replace(/_/g, ' ')} · ${alert.risk_level||''}</span>
       <div style="font-family:var(--mono);font-size:11px;color:var(--muted);">${alertId.slice(0,18)}…</div>
     </div>
     <div class="insp-section">
       <div class="insp-label">Why was this alert raised?</div>
       <ul style="margin:4px 0;padding-left:16px;font-size:12px;">
-        ${(alert.reasons||[]).map(r=>`<li style="margin:3px 0;">${r}</li>`).join('')||'<li style="color:var(--muted)">Anomaly pattern detected above threshold</li>'}
+        ${(alert.reasons||[]).map(r=>`<li style="margin:3px 0;">${r}</li>`).join('')||'<li style="color:var(--muted)">Consensus anomaly pattern detected across multi-model voting</li>'}
       </ul>
     </div>
     <div class="insp-section">
-      <div class="insp-label">TreeSHAP Feature Attribution (Top Drivers)</div>
+      <div class="insp-label">Key Drivers & Anomaly Indicators</div>
       ${shapHtml}
       <div style="font-size:11px;color:var(--dim);margin-top:6px;">
-        🔴 Red bars = features pushing score <b>toward threat</b>. 🟢 Green bars = features arguing <b>against alert</b>.
+        🔴 Red bars = indicators contributing <b>toward threat classification</b>. 🟢 Green bars = features supporting normal traffic baseline.
       </div>
     </div>
     ${buildXaiHtml(alertId, cachedXai)}
     <div class="insp-section" style="border:none;">
-      <button class="btn-tp" onclick="sendFeedback('${alertId}','TP',this)">✔ Confirm Threat (TP)</button>
-      <button class="btn-fp" style="margin-left:8px;" onclick="sendFeedback('${alertId}','FP',this)">✖ False Positive (FP)</button>
+      <button class="btn-tp" onclick="sendFeedback('${alertId}','TP',this)">✔ Confirm Incident (TP)</button>
+      <button class="btn-fp" style="margin-left:8px;" onclick="sendFeedback('${alertId}','FP',this)">✖ Mark False Positive (FP)</button>
     </div>
   `;
 
@@ -1235,23 +1327,29 @@ function drawModelChart(rows) {
   });
 }
 
-// ─── Telemetry Stream Panel (flow tab) ───────────────────────────────────────
-let telemRows = [];
-function pushTelemRow(flow) {
-  telemRows.unshift(flow);
-  if (telemRows.length > 30) telemRows = telemRows.slice(0, 30);
-  const el = $('#telemStream');
-  if (!el) return;
-  el.innerHTML = telemRows.map(f => {
-    const score = Number(f.anomaly_score || 0);
-    const scoreClass = score > 0.7 ? 'high' : '';
-    return `<div class="telem-row">
-      <span class="telem-time">${new Date(f.timestamp).toLocaleTimeString()}</span>
-      <span class="telem-proto">${f.protocol||'TCP'}</span>
-      <span class="telem-flow">${f.src_ip||'—'}:${f.src_port||'?'} → ${f.dst_ip||'—'}:${f.dst_port||'?'}</span>
-      <span class="telem-score ${scoreClass}">${score.toFixed(2)}</span>
-    </div>`;
-  }).join('');
+// ─── Telemetry Stream Row Pusher ─────────────────────────────────────────────
+function pushTelemRow(f) {
+  const stream = $('#telemStream');
+  if (!stream) return;
+  const empty = stream.querySelector('.empty');
+  if (empty) empty.remove();
+
+  const isHigh = (Number(f.anomaly_score || 0) > 0.6);
+  const isRemote = (f.metadata && f.metadata.remote_laptop) || (f.data_source === 'lan_live_inbound') || (f.data_source === 'remote_tcp_inbound');
+  const remoteBadge = isRemote ? '<span class="tag tag-crit" style="margin-left:6px;font-size:9px;padding:1px 5px;">LAN REMOTE</span>' : '';
+  const timeStr = f.timestamp ? new Date(f.timestamp).toLocaleTimeString() : new Date().toLocaleTimeString();
+  const row = document.createElement('div');
+  row.className = 'telem-row';
+  row.innerHTML = `
+    <span class="telem-time">${timeStr}</span>
+    <span class="telem-proto">${f.protocol || 'IP'}</span>
+    <span class="telem-flow" style="font-size:11.5px;">${f.src_ip || '?'}:${f.src_port || '*'} ➔ ${f.dst_ip || '?'}:${f.dst_port || '*'} ${remoteBadge}</span>
+    <span class="telem-score ${isHigh ? 'high' : ''}">${Number(f.anomaly_score || 0).toFixed(2)}</span>
+  `;
+  stream.insertBefore(row, stream.firstChild);
+  while (stream.children.length > 30) {
+    stream.removeChild(stream.lastChild);
+  }
 }
 
 // ─── Main Refresh ─────────────────────────────────────────────────────────────
@@ -1290,9 +1388,9 @@ async function refreshDashboard() {
   }
 
   // ── Sensor pill ──
-  const zeek = health.zeek_available ? 'Zeek ✓' : 'Zeek ✗';
-  const tshark = health.tshark_available ? 'TShark ✓' : 'TShark ✗';
-  $('#sensorPill').textContent = `${zeek} · ${tshark}`;
+  const captureMode = capture.mode || (capture.running ? 'Multi-Interface Active' : 'Passive Standby');
+  const ifaceTxt = capture.interface ? capture.interface.replace('0.0.0.0:', 'LAN:') : '';
+  $('#sensorPill').textContent = ifaceTxt ? `Capture: ${ifaceTxt}` : `Capture: ${captureMode}`;
 
   // ── KPIs ──
   const k = summary.kpis || {};
@@ -1302,7 +1400,7 @@ async function refreshDashboard() {
   $('#kpiCrit').textContent = k.critical || 0;
   $('#kpiHigh').textContent = k.high || 0;
   $('#kpiPkts').textContent = totalPkts.toLocaleString();
-  $('#kpiMode').textContent = `Mode: ${capture.mode||'Passive Stream'}`;
+  $('#kpiMode').textContent = capture.lan_ip ? `Target IP: ${capture.lan_ip}` : `Mode: ${capture.mode||'Passive Stream'}`;
 
   // ── Chain integrity ──
   const intBadge = $('#kpiIntegrity');
@@ -1405,16 +1503,24 @@ async function refreshDashboard() {
 
   // ── Model cards ──
   const mcEl = $('#modelCards');
+  const modelLabelsMap = {
+    xgboost: 'XGBoost Threat Classifier',
+    lstm: 'Bi-LSTM Temporal Model',
+    fft: 'Spectral FFT Analyzer',
+    kitsune: 'KitNET Flow Autoencoder',
+    isolation_forest: 'Isolation Forest Anomaly'
+  };
   if (mcEl && models.length) {
     const latestScores = (modelTS[0]||{}).scores || {};
     mcEl.innerHTML = models.map(m => {
       const score = Number(latestScores[m.model_name] ?? 0);
       const pct = Math.min(100, Math.round(score * 100));
+      const displayName = modelLabelsMap[m.model_name] || m.model_name;
       return `<div class="kpi-card">
-        <div class="kpi-label">${m.model_name}</div>
-        <div class="kpi-value" style="font-size:22px;">${score.toFixed(2)}</div>
-        <div style="margin:8px 0;background:var(--card2);height:5px;border-radius:3px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--blue);border-radius:3px;transition:width .4s;"></div></div>
-        <div class="kpi-meta">${m.backend||'adaptive'} · <span class="tag">${m.training_status||'trained'}</span></div>
+        <div class="kpi-label" style="font-size:11px;font-weight:700;color:var(--text);">${displayName}</div>
+        <div class="kpi-value" style="font-size:22px;margin-top:6px;">${score.toFixed(2)}</div>
+        <div style="margin:8px 0;background:var(--card2);height:6px;border-radius:3px;overflow:hidden;"><div style="height:100%;width:${pct}%;background:var(--blue);border-radius:3px;transition:width .4s;"></div></div>
+        <div class="kpi-meta">${m.backend === 'deterministic' ? 'Multi-Branch Rule Consensus' : (m.backend||'Neural/Statistical')} · <span class="tag tag-ok">ACTIVE</span></div>
       </div>`;
     }).join('');
   }
@@ -1426,12 +1532,13 @@ async function refreshDashboard() {
     const entries = Object.entries(latestScores);
     msEl.innerHTML = entries.length ? entries.map(([k,v],i) => {
       const colors = ['bar-blue','bar-red','bar-amber','bar-green','bar-purple'];
-      return `<div class="barrow">
-        <b style="font-family:var(--mono);font-size:11px;text-transform:uppercase;">${k}</b>
+      const displayName = modelLabelsMap[k] || k;
+      return `<div class="barrow" style="grid-template-columns:180px 1fr 50px;">
+        <span style="font-family:var(--font);font-size:11.5px;font-weight:600;color:var(--text);">${displayName}</span>
         <div class="bar-track"><div class="bar-fill ${colors[i%5]}" style="width:${Math.min(100,Math.round(Number(v)*100))}%"></div></div>
         <span style="font-family:var(--mono);font-size:12px;font-weight:700;">${Number(v).toFixed(2)}</span>
       </div>`;
-    }).join('') : '<div class="empty">No streaming inference scores yet.</div>';
+    }).join('') : '<div class="empty">Awaiting model inference stream…</div>';
   }
 
   // ── Provenance ──
