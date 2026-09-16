@@ -101,6 +101,14 @@ DIODESHIELD implements a **5-branch multi-model AI ensemble** with real-time **T
 * Original stored alert evidence and database rows were preserved; this is a
   presentation/triage correction for historical records.
 
+### 2026-09-17 01:40 IST
+
+* Repositioned the live data-diode animation into one centered horizontal
+  pipeline: local interfaces → red packet pipe → DIODESHIELD AI sensor → blue
+  packet pipe → analysis layer.
+* Kept the animation limited to the data-diode boundary card; no capture,
+  detection, model, or dashboard behavior was changed.
+
 ---
 
 ## 2. System Architecture
