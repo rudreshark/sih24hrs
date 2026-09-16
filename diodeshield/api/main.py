@@ -148,6 +148,7 @@ def _capture_stats() -> dict[str, Any]:
         "current_bps": 0.0, "total_packets_received": 0,
         "total_packets_processed": 0, "total_packets_dropped": 0,
         "total_bytes_received": 0, "queue_depth": 0,
+        "last_packet_time": None, "error_message": None,
     }
 
 
