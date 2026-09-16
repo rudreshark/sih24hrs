@@ -5,34 +5,34 @@
       "ready": true,
       "score_ok": true,
       "type": "XGBoostAdapter",
-      "tested_at": "2026-09-16T09:27:40.987521+00:00"
+      "tested_at": "2026-09-16T12:48:09.270832+00:00"
     },
     "lstm": {
       "ready": true,
       "score_ok": true,
       "type": "LSTMAdapter",
-      "tested_at": "2026-09-16T09:27:40.987578+00:00"
+      "tested_at": "2026-09-16T12:48:09.270934+00:00"
     },
     "fft": {
       "ready": true,
       "score_ok": true,
       "type": "FFTAdapter",
-      "tested_at": "2026-09-16T09:27:40.987608+00:00"
+      "tested_at": "2026-09-16T12:48:09.270989+00:00"
     },
     "kitsune": {
       "ready": true,
       "score_ok": true,
       "type": "KitsuneAdapter",
-      "tested_at": "2026-09-16T09:27:40.987620+00:00"
+      "tested_at": "2026-09-16T12:48:09.271009+00:00"
     },
     "isolation_forest": {
       "ready": true,
       "score_ok": true,
       "type": "IsolationForestAdapter",
-      "tested_at": "2026-09-16T09:27:40.987644+00:00"
+      "tested_at": "2026-09-16T12:48:09.271053+00:00"
     }
   },
   "status": "uninitialized",
-  "last_checked": "2026-09-16T09:27:40.988197",
+  "last_checked": "2026-09-16T12:48:09.271964",
   "platform": "Windows"
 }
