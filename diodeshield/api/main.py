@@ -148,16 +148,20 @@ def capture_status() -> dict[str, Any]:
     enabled = bool(config.get("system", {}).get("live_capture"))
     worker = live_capture
     running = bool(worker and ((worker.process and worker.process.poll() is None) or (worker.thread and worker.thread.is_alive())))
+    health = pipeline.latest_health
     return {
         "enabled": enabled,
         "running": running,
-        "interface": getattr(worker, "interface", None),
-        "mode": pipeline.latest_health.get("mode", "tshark" if worker and worker.process else "native_loopback_stream"),
+        "interface": health.get("interface") or getattr(worker, "interface", None),
+        "mode": health.get("mode", "tshark" if worker and worker.process else "native_loopback_stream"),
         "tshark": getattr(worker, "command", os.getenv("DIODESHIELD_TSHARK", "tshark")),
-        "visibility": pipeline.latest_health.get("visibility", "unknown"),
-        "packets_captured": pipeline.latest_health.get("packets_captured", 0),
-        "last_capture_time": pipeline.latest_health.get("last_capture_time"),
-        "error": pipeline.latest_health.get("capture_error"),
+        "visibility": health.get("visibility", "unknown"),
+        "packets_captured": health.get("packets_captured", 0),
+        "remote_packets_captured": health.get("remote_packets_captured", 0),
+        "last_capture_time": health.get("last_capture_time"),
+        "last_event": health.get("last_event"),
+        "data_source": health.get("data_source"),
+        "error": health.get("capture_error"),
     }
 
 
