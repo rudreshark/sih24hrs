@@ -238,6 +238,7 @@ class Repository:
         sources: dict[str, int] = {}
         destinations: dict[str, int] = {}
         timeseries: dict[str, int] = {}
+        unique_sources_by_level: dict[str, set[str]] = {"CRITICAL": set(), "HIGH": set()}
         for row in alerts:
             level = str(row.get("risk_level") or "UNKNOWN")
             cat = str(row.get("attack_category") or "UNKNOWN")
@@ -251,6 +252,8 @@ class Repository:
             sources[src] = sources.get(src, 0) + 1
             destinations[dst] = destinations.get(dst, 0) + 1
             timeseries[bucket] = timeseries.get(bucket, 0) + 1
+            if level in unique_sources_by_level:
+                unique_sources_by_level[level].add(src)
         flows = self._rows(
             "SELECT COUNT(*) AS count, COALESCE(SUM(packets),0) AS packets, "
             "COALESCE(SUM(bytes),0) AS bytes FROM flows"
@@ -272,8 +275,12 @@ class Repository:
         return {
             "filters": {"start": start, "end": end, "severity": severity, "category": category,
                         "source": source, "destination": destination},
-            "kpis": {"alerts": len(alerts), "critical": severity_counts.get("CRITICAL", 0),
-                     "high": severity_counts.get("HIGH", 0), "packets": flows[0]["packets"],
+            "kpis": {"alerts": len(alerts),
+                     "critical": len(unique_sources_by_level["CRITICAL"]),
+                     "high": len(unique_sources_by_level["HIGH"]),
+                     "critical_events": severity_counts.get("CRITICAL", 0),
+                     "high_events": severity_counts.get("HIGH", 0),
+                     "packets": flows[0]["packets"],
                      "bytes": flows[0]["bytes"], "flows": flows[0]["count"]},
             "timeseries": [{"bucket": bucket, "count": count}
                            for bucket, count in sorted(timeseries.items())],

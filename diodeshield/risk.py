@@ -75,16 +75,17 @@ class RiskEngine:
         ip_spoofing = float(
             features.get("ip_spoofing_score", features.get("identity_anomaly_score", 0.0))
         ) >= 0.50
-        is_critical = (udp_flood or ip_spoofing) and score >= t.get("critical", 0.85)
+        is_critical = udp_flood and score >= t.get("critical", 0.85)
         crit_thresh = t.get("critical", 0.85)
         warn_thresh = t.get("warning", t.get("high", 0.60))
         info_thresh = t.get("info", t.get("medium", 0.35))
         persistent = self.persistence.observe(key, score)
-        if is_critical and not persistent and not ip_spoofing:
+        if is_critical and not persistent:
             is_critical = False
         level = (
             "CRITICAL" if is_critical
-            else "WARNING" if score >= warn_thresh or ip_spoofing or udp_flood
+            else "HIGH" if ip_spoofing
+            else "WARNING" if score >= warn_thresh or udp_flood
             else "INFO" if score >= info_thresh
             else "LOW"
         )

@@ -83,6 +83,16 @@ DIODESHIELD implements a **5-branch multi-model AI ensemble** with real-time **T
 * Training remained metadata-only and defensive; no packet generation,
   injection, exploit script, or application structure change was introduced.
 
+### 2026-09-17 01:26 IST
+
+* Added a dashboard capture control that calls the existing receive-only
+  `/api/capture/start` and `/api/capture/stop` endpoints; it can pause and
+  resume live capture and analysis without generating traffic.
+* Changed severity policy so IP spoofing is `HIGH`, while confirmed high-rate
+  UDP flooding is the only category eligible for `CRITICAL`.
+* Overview `HIGH` and `CRITICAL` KPI counts now deduplicate repeated alerts by
+  source IP; individual alert records and evidence remain preserved.
+
 ---
 
 ## 2. System Architecture
