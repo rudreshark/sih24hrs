@@ -1,5 +1,5 @@
 system:
-  mode: synthetic
+  mode: live_capture
   sensor_version: "0.1.0"
   live_capture: true
 window:

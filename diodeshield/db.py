@@ -253,6 +253,20 @@ class Repository:
             "SELECT COUNT(*) AS count, COALESCE(SUM(packets),0) AS packets, "
             "COALESCE(SUM(bytes),0) AS bytes FROM flows"
         )
+        protocol_rows = self._rows(
+            "SELECT COALESCE(protocol,'UNKNOWN') AS name, COUNT(*) AS count, "
+            "COALESCE(SUM(bytes),0) AS bytes FROM flows GROUP BY protocol "
+            "ORDER BY count DESC LIMIT 10"
+        )
+        talkers = self._rows(
+            "SELECT src_ip AS name, COUNT(*) AS count FROM flows "
+            "WHERE src_ip IS NOT NULL GROUP BY src_ip ORDER BY count DESC LIMIT 10"
+        )
+        subnets = self._rows(
+            "SELECT COUNT(DISTINCT substr(src_ip,1, instr(src_ip,'.') + "
+            "instr(substr(src_ip,instr(src_ip,'.') + 1),'.'))) AS count "
+            "FROM flows WHERE src_ip IS NOT NULL"
+        )
         return {
             "filters": {"start": start, "end": end, "severity": severity, "category": category,
                         "source": source, "destination": destination},
@@ -269,6 +283,9 @@ class Repository:
                             sorted(sources.items(), key=lambda item: item[1], reverse=True)[:10]],
             "top_destinations": [{"name": name, "count": count} for name, count in
                                  sorted(destinations.items(), key=lambda item: item[1], reverse=True)[:10]],
+            "protocols": protocol_rows,
+            "top_talkers": talkers,
+            "active_subnets": int(subnets[0]["count"] or 0) if subnets else 0,
             "recent_alerts": self.alerts(20),
         }
 
@@ -343,4 +360,3 @@ class Repository:
     def health(self) -> dict[str, Any]:
         self._conn.execute("SELECT 1").fetchone()
         return {"database": "healthy", "path": str(self.path)}
-

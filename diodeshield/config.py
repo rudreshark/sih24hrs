@@ -7,7 +7,7 @@ from typing import Any
 import yaml
 
 DEFAULT_CONFIG = {
-    "system": {"mode": "synthetic", "sensor_version": "0.1.0", "live_capture": True},
+    "system": {"mode": "live_capture", "sensor_version": "0.1.0", "live_capture": True},
     "window": {"size_seconds": 5, "slide_seconds": 1},
     "models": {"xgboost": True, "lstm": True, "fft": True, "kitsune": True, "isolation_forest": True},
     "model_artifacts": {},

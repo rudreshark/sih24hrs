@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import platform
 import queue
+import select
+import socket
 import sys
 import threading
 import time
@@ -16,7 +18,7 @@ import psutil
 from scapy.all import conf, get_if_list, sniff
 from scapy.packet import Packet
 
-from diodeshield.decoder.packet import decode_scapy_packet
+from diodeshield.decoder.packet import decode_scapy_packet, decode_socket_buffer
 from diodeshield.schemas import TrafficEvent
 
 
@@ -32,6 +34,7 @@ class CaptureStats:
         self.capture_start_time: str | None = None
         self.last_packet_time: str | None = None
         self.interface: str = "none"
+        self.engine: str = "scapy"
         self.status: str = "STOPPED"
         self.error_message: str | None = None
         self._window_lock = threading.Lock()
@@ -73,6 +76,7 @@ class CaptureStats:
             return {
                 "interface": self.interface,
                 "status": self.status,
+                "engine": self.engine,
                 "total_packets_received": self.total_packets_received,
                 "total_packets_processed": self.total_packets_processed,
                 "total_packets_dropped": self.total_packets_dropped,
@@ -152,18 +156,31 @@ class LiveNetworkCapture:
         queue_maxsize: int = 20000,
         bpf_filter: str = "",
         on_event_callback: Callable[[TrafficEvent], None] | None = None,
+        engine: str = "auto",
+        native_bind_host: str = "0.0.0.0",
+        native_udp_ports: tuple[int, ...] = (502, 102, 2404),
+        native_tcp_port: int = 502,
+        native_receive_size: int = 65535,
     ) -> None:
         self.requested_interface = interface
         self.resolved_interface: str = "none"
         self.queue_maxsize = queue_maxsize
         self.bpf_filter = bpf_filter
         self.on_event = on_event_callback
+        self.engine = engine.lower()
+        self.native_bind_host = native_bind_host
+        self.native_udp_ports = tuple(sorted({int(p) for p in native_udp_ports if 0 < int(p) < 65536}))
+        self.native_tcp_port = int(native_tcp_port)
+        self.native_receive_size = max(1024, int(native_receive_size))
         self.packet_queue: queue.Queue[Packet] = queue.Queue(maxsize=queue_maxsize)
         self.stats = CaptureStats()
         self.stop_event = threading.Event()
         self._capture_thread: threading.Thread | None = None
         self._worker_thread: threading.Thread | None = None
         self._local_ips: set[str] = set()
+        self._native_sockets: set[socket.socket] = set()
+        self._native_clients: dict[socket.socket, tuple[str, int]] = {}
+        self._engine_used = "scapy"
 
     def _resolve_interface(self) -> str:
         if self.requested_interface and self.requested_interface != "auto":
@@ -239,6 +256,17 @@ class LiveNetworkCapture:
             self._capture_thread.join(timeout=1.0)
         if self._worker_thread and self._worker_thread.is_alive():
             self._worker_thread.join(timeout=1.0)
+        self._close_native_sockets()
+
+    def _close_native_sockets(self) -> None:
+        sockets = tuple(self._native_sockets)
+        self._native_sockets.clear()
+        self._native_clients.clear()
+        for sock in sockets:
+            try:
+                sock.close()
+            except OSError:
+                continue
 
     def _capture_loop(self) -> None:
         """Dedicated high-priority capture thread. Pushes packets directly into ring-buffer."""
@@ -253,6 +281,8 @@ class LiveNetworkCapture:
                 self.stats.record_drop()
 
         try:
+            if self.engine == "native":
+                raise RuntimeError("native capture selected")
             kwargs: dict[str, Any] = {
                 "prn": packet_handler,
                 "store": False,
@@ -265,8 +295,103 @@ class LiveNetworkCapture:
 
             sniff(**kwargs)
         except Exception as exc:
-            self.stats.status = "ERROR"
-            self.stats.error_message = str(exc)
+            if self.stop_event.is_set():
+                return
+            self._engine_used = "native_socket"
+            self.stats.engine = self._engine_used
+            self.stats.error_message = f"Scapy unavailable; using native sockets: {exc}"
+            try:
+                self._native_capture_loop()
+            except Exception as native_exc:
+                self.stats.status = "ERROR"
+                self.stats.error_message = str(native_exc)
+
+    def _bind_native_socket(self, sock_type: int, port: int) -> socket.socket:
+        sock = socket.socket(socket.AF_INET, sock_type)
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        sock.setblocking(False)
+        sock.bind((self.native_bind_host, port))
+        if sock_type == socket.SOCK_STREAM:
+            sock.listen(64)
+        self._native_sockets.add(sock)
+        return sock
+
+    def _native_capture_loop(self) -> None:
+        """Observe traffic delivered to configured local UDP/TCP listener ports."""
+        udp_sockets: list[socket.socket] = []
+        for port in self.native_udp_ports:
+            try:
+                udp_sockets.append(self._bind_native_socket(socket.SOCK_DGRAM, port))
+            except OSError:
+                continue
+        if not udp_sockets and self.native_tcp_port <= 0:
+            raise OSError("no native listener ports could be bound")
+        tcp_server = self._bind_native_socket(socket.SOCK_STREAM, self.native_tcp_port)
+        self.resolved_interface = f"native:{self.native_bind_host}"
+        self.stats.interface = self.resolved_interface
+        self.stats.status = "RUNNING"
+        self.stats.error_message = None
+        readers: list[socket.socket] = [*udp_sockets, tcp_server]
+        while not self.stop_event.is_set():
+            readable, _, exceptional = select.select(readers, [], readers, 0.5)
+            for sock in exceptional:
+                self._remove_native_socket(sock, readers)
+            for sock in readable:
+                if sock is tcp_server:
+                    try:
+                        client, address = tcp_server.accept()
+                        client.setblocking(False)
+                        self._native_sockets.add(client)
+                        self._native_clients[client] = (str(address[0]), int(address[1]))
+                        readers.append(client)
+                    except OSError:
+                        continue
+                elif sock in udp_sockets:
+                    self._read_native_udp(sock)
+                else:
+                    self._read_native_tcp(sock, readers)
+        self._close_native_sockets()
+
+    def _remove_native_socket(self, sock: socket.socket, readers: list[socket.socket]) -> None:
+        if sock in readers:
+            readers.remove(sock)
+        self._native_clients.pop(sock, None)
+        self._native_sockets.discard(sock)
+        try:
+            sock.close()
+        except OSError:
+            pass
+
+    def _emit_native(self, payload: bytes, peer: tuple[str, int],
+                     local: tuple[str, int], protocol: str) -> None:
+        self.stats.record_packet(len(payload))
+        event = decode_socket_buffer(
+            payload, src_addr=peer, dst_addr=local, protocol=protocol,
+            interface=self.resolved_interface, local_ips=self._local_ips,
+        )
+        if self.on_event:
+            self.on_event(event)
+        self.stats.total_packets_processed += 1
+
+    def _read_native_udp(self, sock: socket.socket) -> None:
+        try:
+            payload, peer = sock.recvfrom(self.native_receive_size)
+            self._emit_native(payload, (str(peer[0]), int(peer[1])),
+                              (self.native_bind_host, int(sock.getsockname()[1])), "UDP")
+        except (BlockingIOError, ConnectionResetError, OSError):
+            return
+
+    def _read_native_tcp(self, sock: socket.socket, readers: list[socket.socket]) -> None:
+        try:
+            payload = sock.recv(self.native_receive_size)
+            if not payload:
+                self._remove_native_socket(sock, readers)
+                return
+            peer = self._native_clients.get(sock, ("0.0.0.0", 0))
+            local = (self.native_bind_host, int(sock.getsockname()[1]))
+            self._emit_native(payload, peer, local, "TCP")
+        except (BlockingIOError, ConnectionResetError, OSError):
+            self._remove_native_socket(sock, readers)
 
     def _process_queue_loop(self) -> None:
         """Asynchronous worker decoding and routing events without delaying capture loop."""
@@ -283,4 +408,30 @@ class LiveNetworkCapture:
                 self.stats.queue_depth = 0
                 continue
             except Exception:
-                pass
+                self.stats.error_message = "Packet decode or downstream processing failed"
+                self.packet_queue.task_done()
+
+
+def _cli() -> None:
+    capture = LiveNetworkCapture(interface="auto", engine="auto")
+    capture.start()
+    print("DIODESHIELD capture RUNNING; press Ctrl+C to stop.", flush=True)
+    try:
+        while True:
+            time.sleep(5)
+            stats = capture.stats.to_dict()
+            print(
+                f"engine={stats['engine']} status={stats['status']} "
+                f"received={stats['total_packets_received']} "
+                f"processed={stats['total_packets_processed']} "
+                f"dropped={stats['total_packets_dropped']}",
+                flush=True,
+            )
+    except KeyboardInterrupt:
+        print("Stopping capture...", flush=True)
+    finally:
+        capture.stop()
+
+
+if __name__ == "__main__":
+    _cli()

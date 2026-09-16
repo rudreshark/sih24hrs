@@ -42,3 +42,7 @@ class BlockRequest(BaseModel):
 
 class ConfigUpdate(BaseModel):
     values: dict[str, Any]
+
+
+class InterfaceSelectRequest(BaseModel):
+    interface_id: str = Field(min_length=1)

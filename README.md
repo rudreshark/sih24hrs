@@ -196,34 +196,7 @@ chmod +x demo.sh
 
 ---
 
-### Option C: Threat Evaluation Lab Scripts
-
-You can run individual attack simulation scripts from a separate terminal while the dashboard is running:
-
-#### 1. UDP Volumetric Flood Burst:
-```powershell
-python scripts/udp_flood_lab.py --packets 500 --rate 250
-```
-*Simulates high-rate datagram bursts over loopback socket (`127.0.0.1:19001`).*
-
-#### 2. IP Identity Spoofing:
-```powershell
-python scripts/offline_threat_lab.py --scenario spoof --count 1500 --batch-size 250
-```
-*Evaluates detection of virtual source identity rotation across unidirectional boundaries.*
-
-#### 3. Packet / Checksum Alteration:
-```powershell
-python scripts/offline_threat_lab.py --scenario altered --count 1500 --batch-size 250
-```
-*Evaluates payload tampering and checksum integrity detection.*
-
-#### 4. Volumetric Flood (Metadata Stream):
-```powershell
-python scripts/offline_threat_lab.py --scenario flood --count 1500 --batch-size 250
-```
-
-#### 5. Verify Database Cryptographic Hash Chain:
+### Option C: Verify Database Cryptographic Hash Chain
 ```powershell
 python -c "from diodeshield.db import Repository; print(Repository().verify_integrity())"
 ```
@@ -260,8 +233,8 @@ The interactive OpenAPI documentation is available at `http://localhost:8000/doc
 | `GET` | `/api/traffic` | Real-time unidirectional network flow telemetry |
 | `GET` | `/api/models` | Metadata and status of the 5 AI model branches |
 | `GET` | `/api/integrity` | Verifies unbroken continuity of the SHA-256 evidence chain |
-| `POST` | `/api/simulator/inject` | Injects synthetic or threat scenarios (`flood`, `spoof`, `altered`, `beacon`, `recon`) |
-| `POST` | `/api/simulator/toggle_capture` | Toggles live packet capture on/off |
+| `POST` | `/api/capture/start` | Starts receive-only live packet capture |
+| `POST` | `/api/capture/stop` | Stops receive-only live packet capture |
 | `WS` | `/ws/alerts` | Real-time WebSocket push feed for alerts and heartbeat telemetry |
 
 ---
@@ -280,7 +253,8 @@ diodeshield-demo-artifacts/
 ├── demo.sh                        # Linux/macOS automated demo script
 ├── diodeshield/
 │   ├── api/main.py                # FastAPI REST & WebSocket server
-│   ├── capture/live.py            # Multi-mode live capture (psutil, UDP socket, TShark)
+│   ├── capture/sniffer.py         # Scapy/Npcap receive-only live packet capture
+│   ├── decoder/packet.py          # Scapy packet metadata decoder
 │   ├── db.py                      # SQLite Repository with WAL mode & auto-migration
 │   ├── explainability.py          # TreeSHAP & feature attribution engine
 │   ├── features/builder.py        # 32-dimensional OT feature extractor
@@ -293,8 +267,7 @@ diodeshield-demo-artifacts/
 ├── requirements.txt               # Complete dependencies specification
 ├── pyproject.toml                 # Package configuration
 ├── scripts/
-│   ├── offline_threat_lab.py      # Offline threat scenario evaluation harness
-│   └── udp_flood_lab.py           # Loopback socket UDP flood simulation harness
+│   └── (no traffic-generation or exploit scripts)
 ├── tests/                         # Pytest suite, regression tests, and full validator
 └── training/                      # Multi-model training and synthetic generation scripts
 ```
@@ -312,5 +285,3 @@ diodeshield-demo-artifacts/
 ## 11. License
 
 Apache 2.0. Developed for the Smart India Hackathon (SIH0145 / NTRO PS-26145).
-
-
