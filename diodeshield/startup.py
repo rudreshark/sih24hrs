@@ -91,7 +91,7 @@ class ModelHealthChecker:
     def save_provenance(health: dict[str, Any]) -> None:
         """Persist model health and provenance."""
         provenance = ModelHealthChecker.load_provenance()
-        provenance["last_checked"] = datetime.utcnow().isoformat()
+        provenance["last_checked"] = datetime.now(timezone.utc).isoformat()
         provenance["models"] = health.get("models", {})
         provenance["platform"] = health.get("platform")
 
