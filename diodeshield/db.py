@@ -104,6 +104,17 @@ class Repository:
         with self._lock:
             return [dict(row) for row in self._conn.execute(query, values).fetchall()]
 
+    @staticmethod
+    def _effective_risk_level(row: dict[str, Any]) -> str:
+        """Apply the current triage policy to legacy persisted alert rows."""
+        stored = str(row.get("risk_level") or "INFO").upper()
+        category = str(row.get("attack_category") or "").upper()
+        if stored == "CRITICAL" and category != "UDP_FLOOD":
+            return "HIGH" if category == "IP_SPOOFING" else "WARNING"
+        if category == "IP_SPOOFING" and stored == "CRITICAL":
+            return "HIGH"
+        return stored
+
     def save_alert(self, alert: dict[str, Any]) -> None:
         columns = [
             "alert_id", "timestamp", "first_seen", "last_seen", "src_ip", "dst_ip", "src_port",
@@ -133,6 +144,8 @@ class Repository:
                         row[key] = json.loads(row[key])
                     except json.JSONDecodeError:
                         pass
+            row["stored_risk_level"] = row.get("risk_level")
+            row["risk_level"] = self._effective_risk_level(row)
         return rows
 
     def save_alert_explanation(self, alert_id: str, explanation: dict[str, Any]) -> None:
@@ -240,6 +253,7 @@ class Repository:
         timeseries: dict[str, int] = {}
         unique_sources_by_level: dict[str, set[str]] = {"CRITICAL": set(), "HIGH": set()}
         for row in alerts:
+            row["risk_level"] = self._effective_risk_level(row)
             level = str(row.get("risk_level") or "UNKNOWN")
             cat = str(row.get("attack_category") or "UNKNOWN")
             src = str(row.get("src_ip") or "UNKNOWN")

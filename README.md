@@ -93,6 +93,14 @@ DIODESHIELD implements a **5-branch multi-model AI ensemble** with real-time **T
 * Overview `HIGH` and `CRITICAL` KPI counts now deduplicate repeated alerts by
   source IP; individual alert records and evidence remain preserved.
 
+### 2026-09-17 01:31 IST
+
+* Normalized legacy dashboard read-model severity values to the current policy:
+  persisted non-UDP-flood `CRITICAL` rows now display as `WARNING`, legacy
+  IP-spoofing rows display as `HIGH`, and only `UDP_FLOOD` remains `CRITICAL`.
+* Original stored alert evidence and database rows were preserved; this is a
+  presentation/triage correction for historical records.
+
 ---
 
 ## 2. System Architecture
