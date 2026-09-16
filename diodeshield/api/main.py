@@ -11,7 +11,7 @@ from typing import Any
 from fastapi import Depends, FastAPI, HTTPException, WebSocket, WebSocketDisconnect, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, RedirectResponse
 
 from diodeshield.authentication.rbac import Role, create_access_token, require_role
 from diodeshield.capture.sniffer import LiveNetworkCapture, list_network_interfaces
@@ -116,6 +116,11 @@ app.add_middleware(
 
 if os.path.isdir("dashboard"):
     app.mount("/dashboard", StaticFiles(directory="dashboard", html=True), name="dashboard")
+
+
+@app.get("/", include_in_schema=False)
+def root_redirect() -> RedirectResponse:
+    return RedirectResponse(url="/dashboard/")
 
 
 # --- Authentication Endpoints ---

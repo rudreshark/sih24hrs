@@ -170,15 +170,25 @@ class LiveNetworkCapture:
             return self.requested_interface
 
         interfaces = list_network_interfaces()
-        # Prefer an active interface that is UP, not loopback, and has IPv4
-        for iface in interfaces:
-            if iface["is_up"] and iface["ipv4"] and "loopback" not in iface["name"].lower():
-                return str(iface["id"])
+        io_counters = psutil.net_io_counters(pernic=True)
 
-        # Fallback to loopback or first interface
-        for iface in interfaces:
-            if iface["ipv4"]:
-                return str(iface["id"])
+        # Virtual adapter identifiers to deprioritize
+        virtual_patterns = ("virtual", "vmware", "vmnet", "vbox", "virtualbox", "vethernet", "loopback", "teredo")
+
+        # Rank candidates: (not_virtual, active_traffic, is_up, speed)
+        def _rank(iface: dict[str, Any]) -> tuple[int, int, int]:
+            name = iface.get("name", "").lower()
+            desc = iface.get("description", "").lower()
+            is_virtual = any(p in name or p in desc for p in virtual_patterns)
+            stats = io_counters.get(iface.get("name", ""))
+            pkts = (stats.packets_recv + stats.packets_sent) if stats else 0
+            is_up = 1 if iface.get("is_up") else 0
+            return (0 if is_virtual else 1, is_up, pkts)
+
+        valid_candidates = [iface for iface in interfaces if iface.get("ipv4")]
+        if valid_candidates:
+            best = max(valid_candidates, key=_rank)
+            return str(best["id"])
 
         if interfaces:
             return str(interfaces[0]["id"])
