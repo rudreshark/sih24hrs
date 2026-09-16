@@ -18,6 +18,36 @@ DIODESHIELD implements a **5-branch multi-model AI ensemble** with real-time **T
 
 ---
 
+## 1.1 Update History
+
+### 2026-09-16 22:45 IST
+
+* Pushed the complete live-capture and dashboard refactor to the
+  `rudreshark-rebuild-network-dashboard` branch.
+* Added Scapy/Npcap receive-only capture with `sniff(store=False, prn=...)`,
+  bounded queue processing, packet counters, byte counters, drop counters, and
+  capture engine status.
+* Added a native Windows-compatible fallback using a non-blocking
+  `select.select()` loop with multiple UDP listeners and a TCP server/client
+  event path.
+* Unified Scapy packets and native socket buffers into the same `TrafficEvent`
+  schema, including timestamps, endpoints, protocol, packet length, payload
+  metadata, and direction.
+* Rebuilt the dashboard around live packet metrics, alerts, flows, model
+  consensus, evidence-chain status, AI explanations, speech controls, and
+  printable reports using the white SOC theme.
+* Removed offensive/demo traffic generators and simulator scripts from the
+  runtime and documentation.
+* Added capture configuration variables:
+  `DIODESHIELD_CAPTURE_ENGINE`, `DIODESHIELD_NATIVE_BIND_HOST`,
+  `DIODESHIELD_NATIVE_UDP_PORTS`, and `DIODESHIELD_NATIVE_TCP_PORT`.
+* Verified the implementation with live UDP/TCP native-capture checks and the
+  existing 49-test regression suite.
+* Confirmed Npcap is installed and running on the development Windows host;
+  Scapy is capturing from a real `\\Device\\NPF_*` interface.
+
+---
+
 ## 2. System Architecture
 
 ```
@@ -28,10 +58,10 @@ DIODESHIELD implements a **5-branch multi-model AI ensemble** with real-time **T
    - Industrial Sensors                                              v
    - SCADA Telemetry                           +-----------------------------------------------+
                                                |             Live Ingestion Engine             |
-                                               |  - Host/Laptop IP Traffic Sniffer (psutil)    |
-                                               |  - Localhost UDP Diode Socket (:19001)        |
-                                               |  - Baseline Modbus Polling Stream             |
-                                               |  - Optional TShark / Wireshark Adapter        |
+                                               |  - Scapy/Npcap live interface capture        |
+                                               |  - Native UDP/TCP select-loop fallback       |
+                                               |  - Unified TrafficEvent normalization        |
+                                               |  - Optional TShark / Zeek ingestion          |
                                                +-----------------------------------------------+
                                                                      |
                                                                      v
@@ -67,8 +97,8 @@ DIODESHIELD implements a **5-branch multi-model AI ensemble** with real-time **T
                                                +-----------------------------------------------+
                                                |            SOC Web Dashboard & API            |
                                                |  - Real-time WebSocket Feed                   |
-                                               |  - One-Click Threat Injection Control Bar     |
                                                |  - Live Threat Inspector & Flow Analysis      |
+                                               |  - AI explanations and printable reports     |
                                                +-----------------------------------------------+
 ```
 
@@ -88,10 +118,10 @@ DIODESHIELD implements a **5-branch multi-model AI ensemble** with real-time **T
 * Guaranteed visibility into *why* the model made a determination (e.g. `packets_per_sec: +2.16`, `udp_burst_score: +0.20`).
 
 ### C. Universal Live Capture (Works on Any Machine)
-* **Real Laptop/Host IP Monitoring**: Uses `psutil` socket sampling to capture real active network flows (TCP, UDP, web, DNS) on your laptop without requiring administrator rights or Npcap drivers.
-* **Loopback UDP Diode Receiver**: Listens on port `19001` with `SO_REUSEADDR` to receive simulated hardware diode bursts.
-* **Baseline OT Stream**: Synthesizes continuous Modbus/TCP polling frames (`10.0.0.7` &rarr; `10.0.0.8:502`) to maintain normal industrial baseline telemetry.
-* **TShark Adapter**: Seamlessly activates if TShark/Wireshark is detected.
+* **Scapy/Npcap engine**: Captures live packets from the selected Windows, Linux, or macOS interface with `store=False`.
+* **Native fallback engine**: Uses non-blocking UDP/TCP listeners when a raw packet provider is unavailable.
+* **No generated traffic**: Runtime analytics consume observed traffic only; no attack payloads or traffic generators are included.
+* **TShark/Zeek compatibility**: Existing ingestion adapters can be used for deployments that standardize on those tools.
 
 ### D. Cryptographic SHA-256 Hash Chain
 * Every alert computes:
@@ -99,9 +129,10 @@ DIODESHIELD implements a **5-branch multi-model AI ensemble** with real-time **T
 * Any retroactive tampering or deletion of alert records breaks the cryptographic hash link and triggers instant tampering detection in `/api/integrity`.
 
 ### E. Interactive Web SOC Dashboard
-* **One-Click Threat Injection**: Directly test threat categories from the dashboard header (`[⚡ UDP Flood]`, `[⚡ IP Spoof]`, `[⚡ Alteration]`, `[⚡ C2 Beacon]`, `[⚡ OT Recon]`).
-* **Live Threat Inspector**: Auto-tracks incoming alerts with 5-model voting bars, TreeSHAP waterfall charts, policy reasons, and verification badges.
+* **Live Threat Inspector**: Auto-tracks incoming alerts with model voting, TreeSHAP feature attributions, policy reasons, and verification badges.
 * **Flow Analysis**: Real-time table of live network flows and anomaly scores.
+* **AI and reporting**: Explain observed alerts through the configured Groq endpoint,
+  use browser speech synthesis, and generate print-ready HTML security reports.
 * **Zero External CDNs**: Pure HTML5/Canvas/CSS running offline without external dependencies.
 
 ---
@@ -118,8 +149,8 @@ DIODESHIELD implements a **5-branch multi-model AI ensemble** with real-time **T
 
 ### Step 1: Clone the Repository
 ```bash
-git clone https://github.com/Puneeth-S88/diodeshield-demo-artifacts.git
-cd diodeshield-demo-artifacts
+git clone https://github.com/rudreshark/sih24hrs.git
+cd sih24hrs
 ```
 
 ### Step 2: Create and Activate Virtual Environment
@@ -171,28 +202,31 @@ http://localhost:8000/dashboard/
 ```
 
 #### What you will see:
-1. **`● LIVE CAPTURE ACTIVE`** green badge ticking upward with live packet ingest counters.
-2. Real laptop/host network flows populating under the **Flow Analysis** tab.
-3. Click any **One-Click Threat Injection** button (`[⚡ UDP Flood]`, `[⚡ IP Spoof]`, `[⚡ Alteration]`, `[⚡ C2 Beacon]`, `[⚡ OT Recon]`):
-   * An alert immediately appears at the top of the table.
-   * The **Live Threat Inspector** on the right automatically displays model consensus, TreeSHAP feature attributions, and SHA-256 evidence chain verification.
+1. **`● LIVE CAPTURE ACTIVE`** green badge with live packet ingest counters.
+2. Real observed interface traffic populating the **Packet telemetry** and **Flow analysis** views.
+3. The **Live Threat Inspector** displays model consensus, TreeSHAP feature attributions,
+   AI explanations, and SHA-256 evidence-chain verification for persisted detections.
+
+If Npcap is unavailable on Windows, the service automatically uses the native
+UDP/TCP fallback. For full host-wide packet visibility, install Npcap and
+restart the service:
+
+```powershell
+Get-Service npcap
+python -c "from scapy.all import get_if_list; print('\n'.join(get_if_list()))"
+```
 
 ---
 
-### Option B: One-Command 90-Second Live Replay Demo
+### Option B: Standalone Capture Counter
 
-To run an automated sequence evaluating normal baseline, C2 beaconing, industrial reconnaissance, Modbus protocol anomalies, and cryptographic hash verification:
+Run the capture engine directly and print live counters every five seconds:
 
-**Windows PowerShell:**
 ```powershell
-powershell -ExecutionPolicy Bypass -File demo.ps1
+python -m diodeshield.capture.sniffer
 ```
 
-**Linux / macOS:**
-```bash
-chmod +x demo.sh
-./demo.sh
-```
+This command remains passive and receive-only. Stop it with `Ctrl+C`.
 
 ---
 
