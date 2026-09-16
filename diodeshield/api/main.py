@@ -124,7 +124,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="DIODESHIELD Passive Network Monitor", version="2.0.0", lifespan=lifespan)
 origins = [origin.strip() for origin in os.getenv(
     "DIODESHIELD_CORS_ORIGINS",
-    "http://localhost:8000,http://127.0.0.1:8000",
+    "http://localhost:8000,http://127.0.0.1:8000,http://localhost:8080,http://127.0.0.1:8080",
 ).split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
