@@ -46,6 +46,28 @@ DIODESHIELD implements a **5-branch multi-model AI ensemble** with real-time **T
 * Confirmed Npcap is installed and running on the development Windows host;
   Scapy is capturing from a real `\\Device\\NPF_*` interface.
 
+### 2026-09-16 23:42 IST
+
+* Retrained all five existing model branches without changing application
+  source code, project structure, feature definitions, or runtime interfaces.
+* Training corpus: 1,000 rows from the repository's verified public embedded
+  network anomaly dataset, 568 benign windows extracted from the supplied
+  `4SICS-GeekLounge-151020.pcap`, and 200 labeled BENIGN/DDoS flows from the
+  public CIC-IDS2017 subset at
+  `https://huggingface.co/datasets/NGCong/CI-CIDS2017`.
+* Final corpus size: 1,768 rows and 60 existing numeric feature columns.
+* Dataset checksum recorded in the model report:
+  `e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0`.
+* Updated only the generated artifacts in `models/`: XGBoost, LSTM, FFT,
+  Kitsune, Isolation Forest, provenance, and the production training report.
+* Final held-out metrics: XGBoost ROC-AUC `0.8523` and precision `0.6552`;
+  LSTM ROC-AUC `0.7486`; FFT precision `0.2857`; Kitsune precision `0.4286`;
+  Isolation Forest precision `0.2895`.
+* All five trained artifacts were loaded successfully after training.
+  Metrics are validation results, not a guarantee of production detection
+  accuracy; additional representative labeled traffic is required before
+  relying on the ensemble for operational decisions.
+
 ---
 
 ## 2. System Architecture

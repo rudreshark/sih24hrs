@@ -1,30 +1,73 @@
 {
   "status": "production_training",
-  "generated_at": "2026-09-16T12:47:10.313318+00:00",
+  "generated_at": "2026-09-16T18:11:26.686019+00:00",
   "dataset": {
-    "name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
-    "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
-    "license": "CC0-1.0",
-    "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
-    "rows": 1000,
+    "name": "Embedded anomaly flows plus 4SICS PCAP plus CIC-IDS2017 DDoS subset",
+    "source_url": "https://huggingface.co/datasets/NGCong/CI-CIDS2017",
+    "license": "Apache-2.0",
+    "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
+    "rows": 1768,
     "feature_columns": [
-      "packet_size",
-      "inter_arrival_time",
-      "src_port",
-      "dst_port",
-      "packet_count_5s",
-      "mean_packet_size",
-      "spectral_entropy",
-      "frequency_band_energy",
-      "protocol_type_TCP",
-      "protocol_type_UDP",
-      "src_ip_192.168.1.2",
-      "src_ip_192.168.1.3",
+      "authorized_peer_status",
+      "baseline_deviation",
+      "beacon_score",
+      "behavior_anomaly_score",
+      "bytes",
+      "bytes_per_sec",
+      "destination_diversity",
+      "dominant_frequency",
+      "dscp_entropy",
       "dst_ip_192.168.1.5",
       "dst_ip_192.168.1.6",
+      "dst_port",
+      "fan_in",
+      "fan_out",
+      "flow_count",
+      "frequency_band_energy",
+      "harmonic_ratio",
+      "iat_cv",
+      "iat_kurtosis",
+      "iat_mean",
+      "iat_skewness",
+      "iat_std",
+      "iat_variance",
+      "identity_anomaly_score",
+      "inter_arrival_time",
+      "ip_flags_entropy",
+      "ip_id_entropy",
+      "ip_spoofing_score",
+      "lateral_movement_score",
+      "mean_packet_size",
+      "new_ip_ratio",
+      "packet_alteration_score",
+      "packet_count_5s",
+      "packet_len_mean",
+      "packet_len_std",
+      "packet_size",
+      "packets",
+      "packets_per_sec",
+      "payload_integrity_anomaly",
+      "periodicity_score",
+      "port_diversity",
+      "protocol_type_TCP",
+      "protocol_type_UDP",
+      "source_diversity",
+      "spectral_centroid",
+      "spectral_entropy",
+      "spectral_flatness",
+      "src_ip_192.168.1.2",
+      "src_ip_192.168.1.3",
+      "src_port",
+      "subnet_diversity",
       "tcp_flags_FIN",
       "tcp_flags_SYN",
-      "tcp_flags_SYN-ACK"
+      "tcp_flags_SYN-ACK",
+      "tcp_flags_entropy",
+      "ttl_anomaly_score",
+      "ttl_delta",
+      "ttl_mean",
+      "udp_burst_score",
+      "udp_ratio"
     ],
     "split": "group-aware"
   },
@@ -34,28 +77,28 @@
       "artifact": "models\\xgboost.json",
       "model_version": "xgboost-300.0.0",
       "metrics": {
-        "precision": 0.0,
-        "recall": 0.0,
-        "f1": 0.0,
-        "roc_auc": 0.478056,
-        "pr_auc": 0.094698,
-        "latency_ms_p50": 9.165,
-        "latency_ms_p95": 9.685865,
-        "test_samples": 200,
+        "precision": 0.655172,
+        "recall": 0.5,
+        "f1": 0.567164,
+        "roc_auc": 0.852265,
+        "pr_auc": 0.631685,
+        "latency_ms_p50": 15.11745,
+        "latency_ms_p95": 20.13562,
+        "test_samples": 354,
         "threshold": 0.5
       },
       "integrity": {
-        "sha256": "ca023083fae13e9fd53822074d5a6e705a460448f1e1bc8e83f868b490594082",
-        "bytes": 1265
+        "sha256": "fbde61e3138a90e886aa9b71cdae76b7d26ae42b890f41d99d29a39d16a0637b",
+        "bytes": 1929
       },
       "provenance": {
-        "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
-        "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
-        "license": "CC0-1.0",
-        "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
-        "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
+        "dataset_name": "Embedded anomaly flows plus 4SICS PCAP plus CIC-IDS2017 DDoS subset",
+        "source_url": "https://huggingface.co/datasets/NGCong/CI-CIDS2017",
+        "license": "Apache-2.0",
+        "citation": "NGCong CI-CIDS2017 test subset; user-provided 4SICS PCAP; repository embedded anomaly dataset",
+        "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
         "split": "group-aware",
-        "training_timestamp": "2026-09-16T12:47:14.963483+00:00"
+        "training_timestamp": "2026-09-16T18:11:37.399614+00:00"
       }
     },
     "lstm": {
@@ -66,25 +109,25 @@
         "precision": 0.0,
         "recall": 0.0,
         "f1": 0.0,
-        "roc_auc": 0.5,
-        "pr_auc": 0.160297,
-        "latency_ms_p50": 0.647,
-        "latency_ms_p95": 1.734455,
-        "test_samples": 200,
+        "roc_auc": 0.748626,
+        "pr_auc": 0.365462,
+        "latency_ms_p50": 1.18335,
+        "latency_ms_p95": 4.92968,
+        "test_samples": 354,
         "threshold": 0.5
       },
       "integrity": {
-        "sha256": "e489c42b0fd401eece956096e698336b00aea804fbbcc52f8cba6713de7b2dcc",
-        "bytes": 1285
+        "sha256": "eec7737d098410feaa6c409d2db23188778d174d744adf52d84872fe6b75746b",
+        "bytes": 1942
       },
       "provenance": {
-        "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
-        "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
-        "license": "CC0-1.0",
-        "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
-        "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
+        "dataset_name": "Embedded anomaly flows plus 4SICS PCAP plus CIC-IDS2017 DDoS subset",
+        "source_url": "https://huggingface.co/datasets/NGCong/CI-CIDS2017",
+        "license": "Apache-2.0",
+        "citation": "NGCong CI-CIDS2017 test subset; user-provided 4SICS PCAP; repository embedded anomaly dataset",
+        "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
         "split": "group-aware",
-        "training_timestamp": "2026-09-16T12:47:23.771671+00:00"
+        "training_timestamp": "2026-09-16T18:11:47.816067+00:00"
       }
     },
     "fft": {
@@ -92,28 +135,28 @@
       "artifact": "models\\fft.json",
       "model_version": "signal-fft-calibrated-1.0.0",
       "metrics": {
-        "precision": 0.1,
-        "recall": 1.0,
-        "f1": 0.181818,
-        "roc_auc": 0.439167,
-        "pr_auc": 0.101231,
-        "latency_ms_p50": 0.19115,
-        "latency_ms_p95": 0.228395,
-        "test_samples": 200,
-        "threshold": 0.05
+        "precision": 0.285714,
+        "recall": 0.421053,
+        "f1": 0.340426,
+        "roc_auc": 0.57928,
+        "pr_auc": 0.184821,
+        "latency_ms_p50": 0.30955,
+        "latency_ms_p95": 1.73875,
+        "test_samples": 354,
+        "threshold": 0.1148
       },
       "integrity": {
-        "sha256": "bac3dc07e6ac3f4da7687dd98c6b6ff6ea7b3b4cb901982709fc2f78f471f20e",
-        "bytes": 1312
+        "sha256": "0e235800be4968440f392b9079da60126f863d9f0208233b65ed4e2ae848689c",
+        "bytes": 1976
       },
       "provenance": {
-        "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
-        "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
-        "license": "CC0-1.0",
-        "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
-        "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
+        "dataset_name": "Embedded anomaly flows plus 4SICS PCAP plus CIC-IDS2017 DDoS subset",
+        "source_url": "https://huggingface.co/datasets/NGCong/CI-CIDS2017",
+        "license": "Apache-2.0",
+        "citation": "NGCong CI-CIDS2017 test subset; user-provided 4SICS PCAP; repository embedded anomaly dataset",
+        "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
         "split": "group-aware",
-        "training_timestamp": "2026-09-16T12:47:23.865274+00:00"
+        "training_timestamp": "2026-09-16T18:11:48.303602+00:00"
       }
     },
     "kitsune": {
@@ -121,28 +164,28 @@
       "artifact": "models\\kitsune.json",
       "model_version": "diodeshield-adapted-kitnet-1.0.0",
       "metrics": {
-        "precision": 0.102041,
-        "recall": 1.0,
-        "f1": 0.185185,
-        "roc_auc": 0.507222,
-        "pr_auc": 0.117267,
-        "latency_ms_p50": 0.0179,
-        "latency_ms_p95": 0.01891,
-        "test_samples": 200,
-        "threshold": 0.1041
+        "precision": 0.428571,
+        "recall": 0.236842,
+        "f1": 0.305085,
+        "roc_auc": 0.507911,
+        "pr_auc": 0.235902,
+        "latency_ms_p50": 0.0945,
+        "latency_ms_p95": 0.22703,
+        "test_samples": 354,
+        "threshold": 0.1201
       },
       "integrity": {
-        "sha256": "5f2b0f04914a9ac8788560e0f8c3309d985934836613fa1d1d0700bb9c6531ea",
-        "bytes": 2630
+        "sha256": "8f396e8095b9a92b2e125315447d7ac7dfe4bf3030a85a286e392325a0b53775",
+        "bytes": 6227
       },
       "provenance": {
-        "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
-        "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
-        "license": "CC0-1.0",
-        "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
-        "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
+        "dataset_name": "Embedded anomaly flows plus 4SICS PCAP plus CIC-IDS2017 DDoS subset",
+        "source_url": "https://huggingface.co/datasets/NGCong/CI-CIDS2017",
+        "license": "Apache-2.0",
+        "citation": "NGCong CI-CIDS2017 test subset; user-provided 4SICS PCAP; repository embedded anomaly dataset",
+        "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
         "split": "group-aware",
-        "training_timestamp": "2026-09-16T12:47:23.931417+00:00"
+        "training_timestamp": "2026-09-16T18:11:49.031192+00:00"
       }
     },
     "isolation_forest": {
@@ -150,28 +193,28 @@
       "artifact": "models\\isolation_forest.joblib",
       "model_version": "isolation-forest-100.0.0",
       "metrics": {
-        "precision": 0.066667,
-        "recall": 0.1,
-        "f1": 0.08,
-        "roc_auc": 0.489444,
-        "pr_auc": 0.127062,
-        "latency_ms_p50": 25.56845,
-        "latency_ms_p95": 31.539805,
-        "test_samples": 200,
+        "precision": 0.289474,
+        "recall": 0.289474,
+        "f1": 0.289474,
+        "roc_auc": 0.5493,
+        "pr_auc": 0.242792,
+        "latency_ms_p50": 20.04005,
+        "latency_ms_p95": 47.078405,
+        "test_samples": 354,
         "threshold": 0.5
       },
       "integrity": {
-        "sha256": "2c4de9ea07edc08f81c344bcf2e6c37d8e535cdd014cb084de373bf9d37b507a",
-        "bytes": 1298
+        "sha256": "e49e9863b78efe7b81945fc956de12868c37ebe0984dfffeb489dbd027afab82",
+        "bytes": 1956
       },
       "provenance": {
-        "dataset_name": "Network Traffic Anomaly Detection Dataset (Embedded Systems)",
-        "source_url": "https://www.kaggle.com/datasets/ziya07/network-traffic-anomaly-detection-dataset",
-        "license": "CC0-1.0",
-        "citation": "Ziya (2025). Network Traffic Anomaly Detection Dataset for Embedded Systems. Kaggle. Reference Model: kvamshi04 (2025) Network Traffic Anomaly Detection XGBoost.",
-        "sha256": "aafb5de7a8c8d4578d57c4203ff92733240387411f702fc112c7474452ccd584",
+        "dataset_name": "Embedded anomaly flows plus 4SICS PCAP plus CIC-IDS2017 DDoS subset",
+        "source_url": "https://huggingface.co/datasets/NGCong/CI-CIDS2017",
+        "license": "Apache-2.0",
+        "citation": "NGCong CI-CIDS2017 test subset; user-provided 4SICS PCAP; repository embedded anomaly dataset",
+        "sha256": "e7be00cb46de3893fb8918c336dc126b5b18862b51f9ab7cff82fbe63fd1a6d0",
         "split": "group-aware",
-        "training_timestamp": "2026-09-16T12:47:29.489715+00:00"
+        "training_timestamp": "2026-09-16T18:12:00.031004+00:00"
       }
     }
   },
